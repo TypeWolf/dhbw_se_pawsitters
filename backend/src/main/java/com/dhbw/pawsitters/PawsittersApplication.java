@@ -1,13 +1,13 @@
-package com.example.demo;
+package com.dhbw.pawsitters;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class DemoApplication {
+public class PawsittersApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
+		SpringApplication.run(PawsittersApplication.class, args);
 	}
 
 }
