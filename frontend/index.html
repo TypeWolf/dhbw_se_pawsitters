@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Pawsitters Platform</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
+        section { margin-bottom: 30px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        form { display: grid; gap: 10px; max-width: 400px; }
+        input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        button.accept { background-color: #28a745; }
+        button.accept:hover { background-color: #218838; }
+        button.delete { background-color: #dc3545; }
+        button.delete:hover { background-color: #c82333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; color: white; }
+        .badge-pending { background-color: #ffc107; color: black; }
+        .badge-accepted { background-color: #28a745; }
+        .lang-switcher { position: absolute; top: 20px; right: 20px; }
+        .lang-switcher button { padding: 5px 10px; background: #eee; color: #333; margin-left: 5px; }
+        .lang-switcher button.active { background: #007bff; color: white; }
+    </style>
+</head>
+<body>
+    <div class="lang-switcher">
+        <button onclick="setLanguage('en')" id="btn-en">EN</button>
+        <button onclick="setLanguage('de')" id="btn-de">DE</button>
+    </div>
+
+    <h1 data-i18n="title">Pawsitters Platform</h1>
+
+    <div id="authContainer" style="display: flex; gap: 20px; background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div id="loginSection">
+            <h2 data-i18n="login">Login</h2>
+            <form id="loginForm">
+                <input type="email" id="loginEmail" data-i18n="email" placeholder="Email" required>
+                <input type="password" id="loginPassword" data-i18n="password" placeholder="Password" required>
+                <button type="submit" data-i18n="login">Login</button>
+            </form>
+        </div>
+        <div style="border-left: 1px solid #ccc; margin: 0 10px;"></div>
+        <div id="registerSection">
+            <h2 data-i18n="register">Register</h2>
+            <form id="registerForm">
+                <input type="text" id="regFirstName" data-i18n="firstName" placeholder="First Name" required>
+                <input type="text" id="regLastName" data-i18n="lastName" placeholder="Last Name" required>
+                <input type="email" id="regEmail" data-i18n="email" placeholder="Email" required>
+                <input type="password" id="regPassword" data-i18n="password" placeholder="Password" required>
+                <button type="submit" data-i18n="register">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="userProfile" style="display: none; background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb; justify-content: space-between; align-items: center;">
+        <div>
+            <span data-i18n="welcome">Welcome</span>, <strong id="loggedInUserName"></strong>! (Email: <span id="loggedInEmail"></span>)
+        </div>
+        <button onclick="logout()" data-i18n="logout" style="background: #6c757d;">Logout</button>
+    </div>
+
+    <div id="mainContent" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Left Column: Pet Management -->
+        <div>
+            <section>
+                <h2 data-i18n="addPet">Add Your Pet</h2>
+                <form id="petForm">
+                    <input type="text" id="petName" data-i18n="petName" placeholder="Pet Name" required>
+                    <input type="text" id="petSpecies" data-i18n="species" placeholder="Species" required>
+                    <select id="petOwner" required>
+                        <option value="" data-i18n="select">Select...</option>
+                    </select>
+                    <button type="submit" data-i18n="addPet">Add Pet</button>
+                </form>
+            </section>
+
+            <section>
+                <h2 data-i18n="createRequest">Create Sitting Request</h2>
+                <form id="requestForm">
+                    <select id="requestPet" required>
+                        <option value="" data-i18n="select">Select...</option>
+                    </select>
+                    <label data-i18n="startTime">Start Time:</label>
+                    <input type="datetime-local" id="startTime" required>
+                    <label data-i18n="endTime">End Time:</label>
+                    <input type="datetime-local" id="endTime" required>
+                    <button type="submit" data-i18n="postRequest">Post Request</button>
+                </form>
+            </section>
+        </div>
+
+        <!-- Right Column: Offer List -->
+        <div>
+            <section>
+                <h2 data-i18n="availableOffers">Available Sitting Offers</h2>
+                <table id="offerTable">
+                    <thead>
+                        <tr>
+                            <th data-i18n="pet">Pet</th>
+                            <th data-i18n="owner">Owner</th>
+                            <th data-i18n="time">Time</th>
+                            <th data-i18n="status">Status</th>
+                            <th data-i18n="action">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+
+            <section>
+                <h2 data-i18n="usersPetsInfo">Users & Pets (Info)</h2>
+                <table id="infoTable">
+                    <thead>
+                        <tr>
+                            <th data-i18n="type">Type</th>
+                            <th data-i18n="name">Name</th>
+                            <th>ID</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
