@@ -1,6 +1,8 @@
 package com.dhbw.pawsitters.service.user;
 
 import com.dhbw.pawsitters.model.user.AppUser;
+import com.dhbw.pawsitters.repository.pet.PetRepository;
+import com.dhbw.pawsitters.repository.sitting.SittingRequestRepository;
 import com.dhbw.pawsitters.repository.user.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,13 +24,22 @@ public class AppUserServiceTest {
     private AppUserRepository userRepository;
 
     @Autowired
+    private PetRepository petRepository;
+
+    @Autowired
+    private SittingRequestRepository requestRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private AppUser testUser;
 
     @BeforeEach
     void setUp() {
+        requestRepository.deleteAll();
+        petRepository.deleteAll();
         userRepository.deleteAll();
+        
         testUser = AppUser.builder()
                 .firstName("John")
                 .lastName("Doe")
