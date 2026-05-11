@@ -6,8 +6,8 @@ This document outlines the security measures and architectural decisions taken t
 
 ### 1.1 User Authentication
 - **Mechanism:** Users authenticate using their email and a password.
-- **Current State:** Basic password matching is implemented in the Service layer.
-- **Planned Improvements:** Implementation of Spring Security with BCrypt password hashing and JWT (JSON Web Tokens) for stateless session management.
+- **Current State:** Password hashing is implemented using BCrypt.
+- **Planned Improvements:** Implementation of JWT (JSON Web Tokens) for stateless session management.
 
 ### 1.2 Authorization Rules
 - **Access Control:** Only authenticated users can access pet management and sitting requests.
@@ -18,7 +18,7 @@ This document outlines the security measures and architectural decisions taken t
 ## 2. Data Protection
 
 ### 2.1 Sensitive Information
-- **Passwords:** Currently stored in plain text for prototype purposes. *Must be hashed before production.*
+- **Passwords:** Stored as BCrypt hashes.
 - **Personal Data:** Minimal personal data is collected (Name, Email, Phone).
 
 ### 2.2 Database Security
