@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main>
+        <div class="auth-wrap">
+            <div class="card">
+                <h1 data-i18n="signIn">Sign in</h1>
+                <p class="sub" data-i18n="signInSub">Welcome back. Let's find you a great sitter.</p>
+
+                <div id="alert"></div>
+
+                <form id="loginForm" class="stack">
+                    <div class="field">
+                        <label data-i18n="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="field">
+                        <label data-i18n="password">Password</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-block" data-i18n="login">Log in</button>
+                </form>
+
+                <p class="auth-foot">
+                    <span data-i18n="noAccount">New to Pawsitters?</span>
+                    <a href="signup.html" data-i18n="signUpLink">Sign up</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        Layout.init('login');
+        if (Session.isLoggedIn()) window.location.href = 'dashboard.html';
+
+        const alertBox = document.getElementById('alert');
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alertBox.innerHTML = '';
+            try {
+                const user = await Api.auth.login(
+                    document.getElementById('email').value,
+                    document.getElementById('password').value
+                );
+                Session.user = user;
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                alertBox.innerHTML = `<div class="alert alert-error">${I18n.t('loginFailed')}${err.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create account — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main>
+        <div class="auth-wrap">
+            <div class="card">
+                <h1 data-i18n="createAccount">Create your account</h1>
+                <p class="sub" data-i18n="createAccountSub">Join Pawsitters in less than a minute.</p>
+
+                <div id="alert"></div>
+
+                <form id="signupForm" class="stack">
+                    <div class="field">
+                        <label data-i18n="firstName">First name</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="field">
+                        <label data-i18n="lastName">Last name</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                    <div class="field">
+                        <label data-i18n="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="field">
+                        <label data-i18n="phoneNumber">Phone number (optional)</label>
+                        <input type="tel" id="phoneNumber">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="password">Password</label>
+                        <input type="password" id="password" minlength="6" required>
+                    </div>
+                    <button type="submit" class="btn btn-block" data-i18n="register">Create account</button>
+                </form>
+
+                <p class="auth-foot">
+                    <span data-i18n="haveAccount">Already have an account?</span>
+                    <a href="login.html" data-i18n="loginLink">Log in</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        Layout.init('signup');
+        if (Session.isLoggedIn()) window.location.href = 'dashboard.html';
+
+        const alertBox = document.getElementById('alert');
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alertBox.innerHTML = '';
+            const payload = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phoneNumber: document.getElementById('phoneNumber').value || null,
+                password: document.getElementById('password').value
+            };
+            try {
+                await Api.auth.register(payload);
+                const user = await Api.auth.login(payload.email, payload.password);
+                Session.user = user;
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                alertBox.innerHTML = `<div class="alert alert-error">${I18n.t('regFailed')}${err.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

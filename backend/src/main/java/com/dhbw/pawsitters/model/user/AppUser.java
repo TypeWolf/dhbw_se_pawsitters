@@ -8,7 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "app_users")
@@ -32,9 +34,17 @@ public class AppUser {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     private String phoneNumber;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "app_user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    @Builder.Default
+    private Set<Role> roles = EnumSet.of(Role.PET_OWNER, Role.SITTER);
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     @JsonIgnore
