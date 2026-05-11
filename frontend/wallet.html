@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .wallet-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+        @media (max-width: 768px) { .wallet-grid { grid-template-columns: 1fr; } }
+
+        .balance-hero {
+            background: linear-gradient(135deg, #ff5a5f 0%, #ff8a4c 100%);
+            color: #fff;
+            padding: 28px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .balance-hero .label { opacity: 0.85; font-size: 0.9rem; }
+        .balance-hero .amount { font-size: 2.6rem; font-weight: 700; margin: 4px 0 4px; letter-spacing: -0.02em; }
+        .balance-hero .hint { opacity: 0.85; font-size: 0.85rem; }
+
+        .balance-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        @media (max-width: 480px) { .balance-split { grid-template-columns: 1fr; } }
+        .balance-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .balance-pill .pill-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .balance-pill .pill-amount { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .balance-pill .pill-hint { font-size: 0.82rem; color: var(--muted); }
+        .balance-pill.earnings .pill-amount { color: var(--success); }
+        .balance-pill .pill-actions { margin-top: 8px; }
+
+        .bonus-banner {
+            background: #fff5d6;
+            border: 1px solid #ffe18c;
+            color: #6b4f00;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin: 16px 0;
+            font-size: 0.95rem;
+        }
+
+        .tx-list { display: flex; flex-direction: column; gap: 0; }
+        .tx { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .tx:last-child { border-bottom: none; }
+        .tx-main { display: flex; flex-direction: column; gap: 2px; }
+        .tx-label { font-weight: 600; font-size: 0.95rem; }
+        .tx-date { color: var(--muted); font-size: 0.82rem; }
+        .tx-amount { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .tx-amount.neg { color: var(--danger); }
+        .tx-amount.pos { color: var(--success); }
+        .tx-amount.held { color: var(--warning); }
+
+        .card-saved {
+            background: #2b2b2b;
+            color: #fff;
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-saved .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2px; }
+        .card-saved button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--text); color: #fff; padding: 12px 20px; border-radius: 999px;
+            box-shadow: var(--shadow-hover); opacity: 0; transition: opacity 0.2s; pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <div class="page-header">
+            <div>
+                <h1 data-i18n="walletTitle">Wallet</h1>
+                <p data-i18n="walletSub">Your Pawsitters balance and recent payments.</p>
+            </div>
+        </div>
+
+        <div id="alert"></div>
+
+        <div class="wallet-grid">
+            <div>
+                <div class="balance-hero">
+                    <div class="label" data-i18n="walletTotal">Total balance</div>
+                    <div class="amount" id="totalAmount">€—</div>
+                    <div class="hint">Pawsitters Demo Wallet</div>
+                </div>
+
+                <div id="bonusBanner" class="bonus-banner" style="display:none;"></div>
+
+                <div class="balance-split">
+                    <div class="balance-pill">
+                        <span class="pill-label" data-i18n="walletOwnerCredit">Owner credit</span>
+                        <span class="pill-amount" id="ownerCreditAmount">€—</span>
+                        <span class="pill-hint" data-i18n="walletOwnerCreditHint">Spendable on bookings. Not withdrawable.</span>
+                    </div>
+                    <div class="balance-pill earnings">
+                        <span class="pill-label" data-i18n="walletSitterEarnings">Sitter earnings</span>
+                        <span class="pill-amount" id="earningsAmount">€—</span>
+                        <span class="pill-hint" data-i18n="walletSitterEarningsHint">Money you've earned from completed sittings. Withdraw any time.</span>
+                        <div class="pill-actions">
+                            <button class="btn btn-sm" id="withdrawBtn" data-i18n="withdraw" disabled>Withdraw earnings</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h3 data-i18n="walletHistory">Transaction history</h3>
+                    <div id="historyContainer"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <h3 data-i18n="walletAddFunds">Add a payment method</h3>
+                    <p data-i18n="walletAddFundsSub">Save a card on file for future bookings. (Demo — no real money moves.)</p>
+                    <div id="savedCardBlock"></div>
+                    <form id="cardForm" class="stack" style="margin-top: 16px;">
+                        <div class="field">
+                            <label data-i18n="cardholder">Cardholder name</label>
+                            <input type="text" id="cardName" required>
+                        </div>
+                        <div class="field">
+                            <label data-i18n="cardNumber">Card number</label>
+                            <input type="text" id="cardNumber" inputmode="numeric" pattern="[0-9 ]{12,19}" placeholder="4242 4242 4242 4242" required>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="field">
+                                <label data-i18n="cardExpiry">Expiry (MM/YY)</label>
+                                <input type="text" id="cardExpiry" placeholder="04/29" required>
+                            </div>
+                            <div class="field">
+                                <label data-i18n="cardCvc">CVC</label>
+                                <input type="text" id="cardCvc" inputmode="numeric" pattern="[0-9]{3,4}" placeholder="123" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn" data-i18n="addCard">Add card</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (Session.requireAuth()) {
+            Layout.init('wallet');
+
+            const totalAmount = document.getElementById('totalAmount');
+            const ownerCreditAmount = document.getElementById('ownerCreditAmount');
+            const earningsAmount = document.getElementById('earningsAmount');
+            const bonusBanner = document.getElementById('bonusBanner');
+            const historyContainer = document.getElementById('historyContainer');
+            const savedCardBlock = document.getElementById('savedCardBlock');
+            const cardForm = document.getElementById('cardForm');
+            const alertBox = document.getElementById('alert');
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            const toast = document.getElementById('toast');
+
+            const CARD_KEY = `paws.card.${Session.user.id}`;
+            let currentEarnings = 0;
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            function formatDate(iso) {
+                if (!iso) return '';
+                return new Date(iso).toLocaleString(undefined, {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            }
+
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2400);
+            }
+
+            function txDescriptor(tx, meId) {
+                const isPayer = tx.payerId === meId;
+                if (tx.status === 'WITHDRAWN') {
+                    return { key: 'txWithdrawn', cls: 'neg', sign: '-' };
+                }
+                if (tx.status === 'HELD') {
+                    return { key: 'txHeld', cls: 'held', sign: '-' };
+                }
+                if (tx.status === 'REFUNDED') {
+                    return { key: 'txRefunded', cls: 'pos', sign: '+' };
+                }
+                if (tx.status === 'RELEASED') {
+                    if (isPayer) return { key: 'txReleased', cls: 'neg', sign: '' };
+                    return { key: 'txEarned', cls: 'pos', sign: '+' };
+                }
+                return { key: 'txHeld', cls: '', sign: '' };
+            }
+
+            function renderHistory(history) {
+                if (!history || history.length === 0) {
+                    historyContainer.innerHTML = `
+                        <div class="empty">
+                            <div class="emoji">💳</div>
+                            <h3>${I18n.t('walletEmpty')}</h3>
+                            <p>${I18n.t('walletEmptySub')}</p>
+                        </div>`;
+                    return;
+                }
+                const me = Session.user.id;
+                historyContainer.innerHTML = `<div class="tx-list">${history.map(tx => {
+                    const d = txDescriptor(tx, me);
+                    const dt = formatDate(tx.resolvedAt || tx.createdAt);
+                    const amount = `€${Number(tx.amount).toFixed(2)}`;
+                    return `
+                        <div class="tx">
+                            <div class="tx-main">
+                                <span class="tx-label">${I18n.t(d.key)}</span>
+                                <span class="tx-date">${dt}</span>
+                            </div>
+                            <div class="tx-amount ${d.cls}">${d.sign}${amount}</div>
+                        </div>`;
+                }).join('')}</div>`;
+            }
+
+            function renderSavedCard() {
+                const raw = localStorage.getItem(CARD_KEY);
+                if (!raw) { savedCardBlock.innerHTML = ''; cardForm.style.display = 'grid'; return; }
+                const card = JSON.parse(raw);
+                savedCardBlock.innerHTML = `
+                    <div class="card-saved">
+                        <div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">${I18n.t('savedCard')}</div>
+                            <div class="num">•••• •••• •••• ${escapeHtml(card.last4)}</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7; margin-top:4px;">${escapeHtml(card.name)} · ${escapeHtml(card.expiry)}</div>
+                        </div>
+                        <button class="btn btn-sm" id="removeCardBtn">${I18n.t('removeCard')}</button>
+                    </div>`;
+                cardForm.style.display = 'none';
+                document.getElementById('removeCardBtn').addEventListener('click', () => {
+                    localStorage.removeItem(CARD_KEY);
+                    renderSavedCard();
+                });
+            }
+
+            cardForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const num = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+                const card = {
+                    name: document.getElementById('cardName').value,
+                    last4: num.slice(-4),
+                    expiry: document.getElementById('cardExpiry').value
+                };
+                localStorage.setItem(CARD_KEY, JSON.stringify(card));
+                cardForm.reset();
+                renderSavedCard();
+            });
+
+            withdrawBtn.addEventListener('click', async () => {
+                if (currentEarnings <= 0) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${I18n.t('withdrawNothing')}</div>`;
+                    return;
+                }
+                const formatted = currentEarnings.toFixed(2);
+                if (!confirm(I18n.t('withdrawConfirm').replace('%AMOUNT%', formatted))) return;
+                withdrawBtn.disabled = true;
+                try {
+                    await Api.wallet.withdraw(Session.user.id);
+                    showToast(I18n.t('withdrawToast').replace('%AMOUNT%', formatted));
+                    load();
+                } catch (err) {
+                    withdrawBtn.disabled = false;
+                    alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            });
+
+            async function load() {
+                try {
+                    const data = await Api.wallet.me(Session.user.id);
+                    const credit = Number(data.ownerCredit);
+                    const earnings = Number(data.sitterEarnings);
+                    const total = Number(data.total);
+                    currentEarnings = earnings;
+
+                    totalAmount.textContent = `€${total.toFixed(2)}`;
+                    ownerCreditAmount.textContent = `€${credit.toFixed(2)}`;
+                    earningsAmount.textContent = `€${earnings.toFixed(2)}`;
+
+                    withdrawBtn.disabled = earnings <= 0;
+
+                    // Show the welcome-bonus banner only if the user still has the full €50 promo and no history.
+                    if (Math.abs(credit - 50) < 0.01 && (!data.history || data.history.length === 0)) {
+                        bonusBanner.style.display = 'block';
+                        bonusBanner.textContent = I18n.t('walletWelcomeBonus').replace('%AMOUNT%', '50.00');
+                    } else {
+                        bonusBanner.style.display = 'none';
+                    }
+
+                    renderHistory(data.history);
+                } catch (err) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            }
+
+            document.addEventListener('paws:lang', () => { I18n.apply(); load(); renderSavedCard(); });
+            renderSavedCard();
+            load();
+        }
+    </script>
+</body>
+</html>

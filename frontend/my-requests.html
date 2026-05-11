@@ -115,6 +115,8 @@
                     const price = r.priceOffered != null ? `€${Number(r.priceOffered).toFixed(2)}` : '—';
                     const sitter = r.sitter ? `${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}` : '—';
                     const canCancel = status === 'PENDING';
+                    const canComplete = status === 'ACCEPTED';
+                    const sitterName = r.sitter ? `${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}` : '';
                     return `
                         <div class="card req-card">
                             <div class="req-head">
@@ -140,6 +142,11 @@
                             </div>
                             ${r.handoverNotes ? `<div class="req-meta">"${escapeHtml(r.handoverNotes)}"</div>` : ''}
                             ${canCancel ? `<div class="req-actions"><button class="btn btn-sm btn-secondary" data-cancel="${r.id}">${I18n.t('cancelRequest')}</button></div>` : ''}
+                            ${canComplete ? `
+                                <div class="req-actions" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                    <button class="btn btn-sm" data-complete="${r.id}" data-price="${r.priceOffered || 0}" data-sitter="${sitterName}">${I18n.t('confirmComplete')}</button>
+                                    <span class="req-meta">${I18n.t('confirmCompleteHint')}</span>
+                                </div>` : ''}
                         </div>`;
                 }).join('')}</div>`;
 
@@ -150,6 +157,25 @@
                             await Api.requests.cancel(btn.dataset.cancel, Session.user.id);
                             load();
                         } catch (err) {
+                            alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                        }
+                    });
+                });
+
+                container.querySelectorAll('[data-complete]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const price = Number(btn.dataset.price || 0).toFixed(2);
+                        const sitterName = btn.dataset.sitter || '';
+                        const prompt = I18n.t('confirmCompletePrompt')
+                            .replace('%PRICE%', price)
+                            .replace('%SITTER%', sitterName || I18n.t('sitter'));
+                        if (!confirm(prompt)) return;
+                        btn.disabled = true;
+                        try {
+                            await Api.requests.complete(btn.dataset.complete, Session.user.id);
+                            load();
+                        } catch (err) {
+                            btn.disabled = false;
                             alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
                         }
                     });

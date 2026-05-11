@@ -71,6 +71,8 @@
                     <input type="number" id="priceOffered" min="0" step="0.50" required>
                 </div>
 
+                <div id="escrowNotice" class="alert alert-success" style="display:none;"></div>
+
                 <button type="submit" class="btn" data-i18n="postRequest">Post request</button>
             </form>
         </div>
@@ -116,6 +118,19 @@
                 }[c]));
             }
 
+            const priceInput = document.getElementById('priceOffered');
+            const escrowNotice = document.getElementById('escrowNotice');
+            function updateEscrowNotice() {
+                const v = parseFloat(priceInput.value);
+                if (!isNaN(v) && v > 0) {
+                    escrowNotice.style.display = 'block';
+                    escrowNotice.textContent = I18n.t('fundsWillBeHeld').replace('%PRICE%', v.toFixed(2));
+                } else {
+                    escrowNotice.style.display = 'none';
+                }
+            }
+            priceInput.addEventListener('input', updateEscrowNotice);
+
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 alertBox.innerHTML = '';
@@ -142,7 +157,10 @@
                     await Api.requests.create(payload);
                     window.location.href = 'my-requests.html';
                 } catch (err) {
-                    alertBox.innerHTML = `<div class="alert alert-error">${I18n.t('saveFailed')}${err.message}</div>`;
+                    const msg = /insufficient/i.test(err.message)
+                        ? I18n.t('insufficientFunds')
+                        : I18n.t('saveFailed') + err.message;
+                    alertBox.innerHTML = `<div class="alert alert-error">${msg}</div>`;
                 }
             });
 

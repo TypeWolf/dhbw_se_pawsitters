@@ -50,6 +50,11 @@ public class SittingRequestController {
         return requestService.cancelRequest(id, userId);
     }
 
+    @PutMapping("/{id}/complete")
+    public SittingRequest completeRequest(@PathVariable Long id, @RequestParam Long userId) {
+        return requestService.completeRequest(id, userId);
+    }
+
     @DeleteMapping("/{id}")
     public void deleteRequest(@PathVariable Long id) {
         requestService.deleteRequest(id);
