@@ -24,7 +24,6 @@ public class AppUserService {
             throw new RuntimeException("Email already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-<<<<<<< feat/phase-2-pets-and-requests
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             user.setRoles(EnumSet.of(Role.PET_OWNER, Role.SITTER));
         }
@@ -33,15 +32,13 @@ public class AppUserService {
         if (userRepository.count() == 0) {
             user.getRoles().add(Role.ADMIN);
         }
-=======
->>>>>>> main
         return userRepository.save(user);
     }
 
     public AppUser login(String email, String password) {
         AppUser user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
