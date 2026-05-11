@@ -3,132 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="title">Pawsitters Platform</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
-        section { margin-bottom: 30px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        form { display: grid; gap: 10px; max-width: 400px; }
-        input, select, button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        button.accept { background-color: #28a745; }
-        button.accept:hover { background-color: #218838; }
-        button.delete { background-color: #dc3545; }
-        button.delete:hover { background-color: #c82333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f8f9fa; }
-        .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; color: white; }
-        .badge-pending { background-color: #ffc107; color: black; }
-        .badge-accepted { background-color: #28a745; }
-        .lang-switcher { position: absolute; top: 20px; right: 20px; }
-        .lang-switcher button { padding: 5px 10px; background: #eee; color: #333; margin-left: 5px; }
-        .lang-switcher button.active { background: #007bff; color: white; }
-    </style>
+    <title>Pawsitters — Trusted pet sitters, on your schedule</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="lang-switcher">
-        <button onclick="setLanguage('en')" id="btn-en">EN</button>
-        <button onclick="setLanguage('de')" id="btn-de">DE</button>
-    </div>
+    <header id="site-header" class="site-header"></header>
 
-    <h1 data-i18n="title">Pawsitters Platform</h1>
+    <main>
+        <section class="hero container">
+            <h1 data-i18n="heroTitle">Find a trusted sitter for your pet, on your schedule.</h1>
+            <p class="lead" data-i18n="heroLead">Pawsitters connects pet owners with caring sitters in the neighbourhood. Post a request, get matched, and relax — your pet is in good hands.</p>
+            <div class="cta-row">
+                <a class="btn" href="signup.html" data-i18n="ctaGetStarted">Get started</a>
+                <a class="btn btn-secondary" href="login.html" data-i18n="ctaSignIn">I already have an account</a>
+            </div>
+        </section>
 
-    <div id="authContainer" style="display: flex; gap: 20px; background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div id="loginSection">
-            <h2 data-i18n="login">Login</h2>
-            <form id="loginForm">
-                <input type="email" id="loginEmail" data-i18n="email" placeholder="Email" required>
-                <input type="password" id="loginPassword" data-i18n="password" placeholder="Password" required>
-                <button type="submit" data-i18n="login">Login</button>
-            </form>
-        </div>
-        <div style="border-left: 1px solid #ccc; margin: 0 10px;"></div>
-        <div id="registerSection">
-            <h2 data-i18n="register">Register</h2>
-            <form id="registerForm">
-                <input type="text" id="regFirstName" data-i18n="firstName" placeholder="First Name" required>
-                <input type="text" id="regLastName" data-i18n="lastName" placeholder="Last Name" required>
-                <input type="email" id="regEmail" data-i18n="email" placeholder="Email" required>
-                <input type="password" id="regPassword" data-i18n="password" placeholder="Password" required>
-                <button type="submit" data-i18n="register">Register</button>
-            </form>
-        </div>
-    </div>
+        <section class="section container" id="how">
+            <div class="section-title">
+                <h2 data-i18n="howItWorks">How it works</h2>
+                <p data-i18n="howItWorksSub">Three simple steps from request to reunion.</p>
+            </div>
+            <div class="steps">
+                <div class="card step">
+                    <span class="step-num">1</span>
+                    <h3 data-i18n="step1Title">Post a request</h3>
+                    <p data-i18n="step1Text">Tell us when you need a sitter, where to hand over, and how much you'd like to pay.</p>
+                </div>
+                <div class="card step">
+                    <span class="step-num">2</span>
+                    <h3 data-i18n="step2Title">A sitter accepts</h3>
+                    <p data-i18n="step2Text">Browse from trusted sitters in your area. Funds are held safely until completion.</p>
+                </div>
+                <div class="card step">
+                    <span class="step-num">3</span>
+                    <h3 data-i18n="step3Title">Reunite &amp; confirm</h3>
+                    <p data-i18n="step3Text">Pick up your pet, confirm everything went well, and the sitter gets paid.</p>
+                </div>
+            </div>
+        </section>
 
-    <div id="userProfile" style="display: none; background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb; justify-content: space-between; align-items: center;">
-        <div>
-            <span data-i18n="welcome">Welcome</span>, <strong id="loggedInUserName"></strong>! (Email: <span id="loggedInEmail"></span>)
-        </div>
-        <button onclick="logout()" data-i18n="logout" style="background: #6c757d;">Logout</button>
-    </div>
+        <section class="section container">
+            <div class="section-title">
+                <h2 data-i18n="whyPaws">Why Pawsitters?</h2>
+                <p data-i18n="whyPawsSub">Built for pet owners and sitters who care.</p>
+            </div>
+            <div class="features">
+                <div class="card feature">
+                    <div class="icon">🐶</div>
+                    <h3 data-i18n="feature1Title">Trusted community</h3>
+                    <p data-i18n="feature1Text">Every sitter has a profile and history. You're never leaving your pet with a stranger.</p>
+                </div>
+                <div class="card feature">
+                    <div class="icon">💳</div>
+                    <h3 data-i18n="feature2Title">Secure payments</h3>
+                    <p data-i18n="feature2Text">Owners fund the booking up front. We only release it to the sitter once you say all went well.</p>
+                </div>
+                <div class="card feature">
+                    <div class="icon">📍</div>
+                    <h3 data-i18n="feature3Title">Flexible handover</h3>
+                    <p data-i18n="feature3Text">Drop off at the sitter, meet at a park, or have your sitter come pick up — your call.</p>
+                </div>
+            </div>
+        </section>
 
-    <div id="mainContent" style="display: none;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <!-- Left Column: Pet Management -->
-        <div>
-            <section>
-                <h2 data-i18n="addPet">Add Your Pet</h2>
-                <form id="petForm">
-                    <input type="text" id="petName" data-i18n="petName" placeholder="Pet Name" required>
-                    <input type="text" id="petSpecies" data-i18n="species" placeholder="Species" required>
-                    <select id="petOwner" required>
-                        <option value="" data-i18n="select">Select...</option>
-                    </select>
-                    <button type="submit" data-i18n="addPet">Add Pet</button>
-                </form>
-            </section>
+        <section class="section container" style="text-align: center;">
+            <h2 data-i18n="ctaGetStarted">Get started</h2>
+            <p style="margin-bottom: 24px;" data-i18n="heroLead"></p>
+            <a class="btn" href="signup.html" data-i18n="ctaGetStarted">Get started</a>
+        </section>
+    </main>
 
-            <section>
-                <h2 data-i18n="createRequest">Create Sitting Request</h2>
-                <form id="requestForm">
-                    <select id="requestPet" required>
-                        <option value="" data-i18n="select">Select...</option>
-                    </select>
-                    <label data-i18n="startTime">Start Time:</label>
-                    <input type="datetime-local" id="startTime" required>
-                    <label data-i18n="endTime">End Time:</label>
-                    <input type="datetime-local" id="endTime" required>
-                    <button type="submit" data-i18n="postRequest">Post Request</button>
-                </form>
-            </section>
-        </div>
+    <footer id="site-footer" class="site-footer"></footer>
 
-        <!-- Right Column: Offer List -->
-        <div>
-            <section>
-                <h2 data-i18n="availableOffers">Available Sitting Offers</h2>
-                <table id="offerTable">
-                    <thead>
-                        <tr>
-                            <th data-i18n="pet">Pet</th>
-                            <th data-i18n="owner">Owner</th>
-                            <th data-i18n="time">Time</th>
-                            <th data-i18n="status">Status</th>
-                            <th data-i18n="action">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </section>
-
-            <section>
-                <h2 data-i18n="usersPetsInfo">Users & Pets (Info)</h2>
-                <table id="infoTable">
-                    <thead>
-                        <tr>
-                            <th data-i18n="type">Type</th>
-                            <th data-i18n="name">Name</th>
-                            <th>ID</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </section>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        Layout.init('home');
+    </script>
 </body>
 </html>
