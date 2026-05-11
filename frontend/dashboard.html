@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <div class="page-header">
+            <div>
+                <h1><span data-i18n="dashWelcome">Welcome back</span>, <span id="userName"></span> 👋</h1>
+                <p data-i18n="dashSub">What would you like to do today?</p>
+            </div>
+        </div>
+
+        <div class="grid-3">
+            <div class="card card-hover" id="ownerCard">
+                <div class="icon" style="width:48px;height:48px;border-radius:12px;background:#fde9ea;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:16px;">🐶</div>
+                <h3 data-i18n="dashOwnerTitle">I have a pet</h3>
+                <p data-i18n="dashOwnerText">Manage your pets and post a request for a sitter.</p>
+                <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+                    <a class="btn btn-sm" href="pets.html" data-i18n="goToPets">Manage my pets</a>
+                    <a class="btn btn-sm btn-secondary" href="my-requests.html" data-i18n="goToRequests">My requests</a>
+                </div>
+            </div>
+
+            <div class="card card-hover" id="sitterCard">
+                <div class="icon" style="width:48px;height:48px;border-radius:12px;background:#fde9ea;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:16px;">🐾</div>
+                <h3 data-i18n="dashSitterTitle">I want to sit</h3>
+                <p data-i18n="dashSitterText">Browse open requests in your area and grow your calendar.</p>
+                <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+                    <a class="btn btn-sm" href="sitter-jobs.html" data-i18n="goToJobs">Find jobs</a>
+                    <a class="btn btn-sm btn-secondary" href="calendar.html" data-i18n="goToCalendar">My calendar</a>
+                </div>
+            </div>
+
+            <div class="card card-hover">
+                <div class="icon" style="width:48px;height:48px;border-radius:12px;background:#fde9ea;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:16px;">💳</div>
+                <h3 data-i18n="dashWalletTitle">Wallet</h3>
+                <p data-i18n="dashWalletText">View your balance and transaction history.</p>
+                <div style="display:flex;gap:8px;margin-top:16px;">
+                    <a class="btn btn-sm btn-secondary" href="wallet.html" data-i18n="goToWallet">Open wallet</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (!Session.requireAuth()) {
+            // redirect handled by requireAuth
+        } else {
+            Layout.init('dashboard');
+            const user = Session.user;
+            document.getElementById('userName').textContent = user.firstName;
+            if (!Session.hasRole('PET_OWNER')) document.getElementById('ownerCard').style.display = 'none';
+            if (!Session.hasRole('SITTER')) document.getElementById('sitterCard').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
