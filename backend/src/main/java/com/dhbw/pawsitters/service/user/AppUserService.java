@@ -4,7 +4,6 @@ import com.dhbw.pawsitters.model.user.AppUser;
 import com.dhbw.pawsitters.model.user.Role;
 import com.dhbw.pawsitters.repository.user.AppUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +16,15 @@ public class AppUserService {
     @Autowired
     private AppUserRepository userRepository;
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public AppUser register(AppUser user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+<<<<<<< feat/phase-2-pets-and-requests
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             user.setRoles(EnumSet.of(Role.PET_OWNER, Role.SITTER));
         }
@@ -32,13 +33,15 @@ public class AppUserService {
         if (userRepository.count() == 0) {
             user.getRoles().add(Role.ADMIN);
         }
+=======
+>>>>>>> main
         return userRepository.save(user);
     }
 
     public AppUser login(String email, String password) {
         AppUser user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
+        
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
