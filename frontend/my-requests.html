@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My requests — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .req-grid { display: grid; gap: 16px; }
+        .req-card { display: grid; gap: 8px; }
+        .req-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+        .req-head h3 { margin: 0; }
+        .req-meta { color: var(--muted); font-size: 0.9rem; }
+        .req-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.95rem; }
+        .req-row > div { flex: 1; min-width: 140px; }
+        .req-row strong { display: block; font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+        .req-actions { margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <div class="page-header">
+            <div>
+                <h1 data-i18n="myRequestsTitle">My requests</h1>
+                <p data-i18n="myRequestsSub">Track the status of the sitters you've booked.</p>
+            </div>
+            <a class="btn" href="request-new.html" data-i18n="newRequest">Post a sitter request</a>
+        </div>
+
+        <div id="alert"></div>
+        <div id="container"></div>
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (Session.requireAuth()) {
+            Layout.init('requests');
+
+            const container = document.getElementById('container');
+            const alertBox = document.getElementById('alert');
+
+            const HANDOVER_LABEL = {
+                SITTER_HOME: 'handoverSitterHome',
+                MEET_AT_PLACE: 'handoverMeet',
+                OWNER_HOME_PICKUP: 'handoverPickup'
+            };
+            const STATUS_LABEL = {
+                PENDING: 'statusPending',
+                ACCEPTED: 'statusAccepted',
+                COMPLETED: 'statusCompleted',
+                CANCELLED: 'statusCancelled',
+                REJECTED: 'statusCancelled'
+            };
+            const STATUS_BADGE = {
+                PENDING: 'badge-pending',
+                ACCEPTED: 'badge-accepted',
+                COMPLETED: 'badge-completed',
+                CANCELLED: 'badge-cancelled',
+                REJECTED: 'badge-cancelled'
+            };
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            function formatRange(start, end) {
+                const s = new Date(start);
+                const e = new Date(end);
+                const sameDay = s.toDateString() === e.toDateString();
+                const dateOpts = { weekday: 'short', day: '2-digit', month: 'short' };
+                const timeOpts = { hour: '2-digit', minute: '2-digit' };
+                if (sameDay) {
+                    return `${s.toLocaleDateString(undefined, dateOpts)}, ${s.toLocaleTimeString(undefined, timeOpts)} – ${e.toLocaleTimeString(undefined, timeOpts)}`;
+                }
+                return `${s.toLocaleDateString(undefined, dateOpts)} ${s.toLocaleTimeString(undefined, timeOpts)} – ${e.toLocaleDateString(undefined, dateOpts)} ${e.toLocaleTimeString(undefined, timeOpts)}`;
+            }
+
+            async function load() {
+                container.innerHTML = `<div class="empty"><div class="emoji">⏳</div><p>${I18n.t('loading')}</p></div>`;
+                try {
+                    const requests = await Api.requests.listMine(Session.user.id);
+                    requests.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+                    render(requests);
+                } catch (err) {
+                    container.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            }
+
+            function render(requests) {
+                if (requests.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <div class="emoji">📭</div>
+                            <h3>${I18n.t('noRequests')}</h3>
+                            <p>${I18n.t('noRequestsSub')}</p>
+                            <a class="btn" href="request-new.html" style="margin-top:16px;">${I18n.t('newRequest')}</a>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = `<div class="req-grid">${requests.map(r => {
+                    const status = r.status || 'PENDING';
+                    const statusKey = STATUS_LABEL[status] || 'statusPending';
+                    const badgeCls = STATUS_BADGE[status] || 'badge-pending';
+                    const handover = r.handoverType ? I18n.t(HANDOVER_LABEL[r.handoverType]) : '—';
+                    const price = r.priceOffered != null ? `€${Number(r.priceOffered).toFixed(2)}` : '—';
+                    const sitter = r.sitter ? `${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}` : '—';
+                    const canCancel = status === 'PENDING';
+                    return `
+                        <div class="card req-card">
+                            <div class="req-head">
+                                <div>
+                                    <h3>${escapeHtml(r.pet ? r.pet.name : 'Pet')}</h3>
+                                    <div class="req-meta">${formatRange(r.startTime, r.endTime)}</div>
+                                </div>
+                                <span class="badge ${badgeCls}">${I18n.t(statusKey)}</span>
+                            </div>
+                            <div class="req-row">
+                                <div>
+                                    <strong>${I18n.t('handover')}</strong>
+                                    ${handover}${r.handoverLocation ? ' — ' + escapeHtml(r.handoverLocation) : ''}
+                                </div>
+                                <div>
+                                    <strong>${I18n.t('pricePerJob')}</strong>
+                                    ${price}
+                                </div>
+                                <div>
+                                    <strong>${I18n.t('sitter')}</strong>
+                                    ${sitter}
+                                </div>
+                            </div>
+                            ${r.handoverNotes ? `<div class="req-meta">"${escapeHtml(r.handoverNotes)}"</div>` : ''}
+                            ${canCancel ? `<div class="req-actions"><button class="btn btn-sm btn-secondary" data-cancel="${r.id}">${I18n.t('cancelRequest')}</button></div>` : ''}
+                        </div>`;
+                }).join('')}</div>`;
+
+                container.querySelectorAll('[data-cancel]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!confirm(I18n.t('confirmCancel'))) return;
+                        try {
+                            await Api.requests.cancel(btn.dataset.cancel, Session.user.id);
+                            load();
+                        } catch (err) {
+                            alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                        }
+                    });
+                });
+            }
+
+            document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
+            load();
+        }
+    </script>
+</body>
+</html>

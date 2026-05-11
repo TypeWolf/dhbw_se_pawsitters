@@ -23,6 +23,18 @@ public class SittingRequestService {
         return requestRepository.findAll();
     }
 
+    public List<SittingRequest> getOpenRequests() {
+        return requestRepository.findByStatus(SittingRequest.RequestStatus.PENDING);
+    }
+
+    public List<SittingRequest> getRequestsByRequester(Long requesterId) {
+        return requestRepository.findByRequesterId(requesterId);
+    }
+
+    public List<SittingRequest> getRequestsBySitter(Long sitterId) {
+        return requestRepository.findBySitterId(sitterId);
+    }
+
     public SittingRequest createRequest(SittingRequest request) {
         request.setStatus(SittingRequest.RequestStatus.PENDING);
         return requestRepository.save(request);
@@ -32,7 +44,7 @@ public class SittingRequestService {
     public SittingRequest acceptRequest(Long requestId, Long sitterId) {
         SittingRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
-        
+
         if (request.getRequester().getId().equals(sitterId)) {
             throw new RuntimeException("Owner cannot accept their own sitting request");
         }
@@ -45,6 +57,22 @@ public class SittingRequestService {
 
         request.setSitter(sitter);
         request.setStatus(SittingRequest.RequestStatus.ACCEPTED);
+        return requestRepository.save(request);
+    }
+
+    @Transactional
+    public SittingRequest cancelRequest(Long requestId, Long userId) {
+        SittingRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        if (!request.getRequester().getId().equals(userId)) {
+            throw new RuntimeException("Only the requester can cancel this request");
+        }
+        if (request.getStatus() != SittingRequest.RequestStatus.PENDING) {
+            throw new RuntimeException("Only PENDING requests can be cancelled");
+        }
+
+        request.setStatus(SittingRequest.RequestStatus.CANCELLED);
         return requestRepository.save(request);
     }
 

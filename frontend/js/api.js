@@ -30,10 +30,14 @@ const Api = {
         create: (pet) => request('/pets', { method: 'POST', body: JSON.stringify(pet) })
     },
     requests: {
-        list: () => request('/requests'),
+        listOpen: () => request('/requests'),
+        listMine: (userId) => request(`/requests/mine?userId=${userId}`),
+        listBooked: (sitterId) => request(`/requests/booked?sitterId=${sitterId}`),
         create: (req) => request('/requests', { method: 'POST', body: JSON.stringify(req) }),
         accept: (id, sitterId) =>
             request(`/requests/${id}/accept?sitterId=${sitterId}`, { method: 'PUT' }),
+        cancel: (id, userId) =>
+            request(`/requests/${id}/cancel?userId=${userId}`, { method: 'PUT' }),
         remove: (id) => request(`/requests/${id}`, { method: 'DELETE' })
     }
 };

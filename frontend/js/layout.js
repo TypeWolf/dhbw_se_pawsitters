@@ -14,7 +14,7 @@ const Layout = {
             nav = [
                 link('dashboard.html', 'navDashboard', 'dashboard'),
                 link('pets.html', 'navPets', 'pets'),
-                link('my-requests.html', 'navFindSitter', 'requests'),
+                link('my-requests.html', 'navMyRequests', 'requests'),
                 link('sitter-jobs.html', 'navJobs', 'jobs'),
                 link('calendar.html', 'navCalendar', 'calendar'),
                 link('wallet.html', 'navWallet', 'wallet'),
