@@ -1,7 +1,7 @@
 package com.dhbw.pawsitters.service.pet;
 
 import com.dhbw.pawsitters.model.pet.Pet;
-import com.dhbw.pawsitters.repository.pet.PetRepository;
+import com.dhbw.pawsitters.service.UnitOfWork;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,18 +11,17 @@ import java.util.List;
 public class PetService {
 
     @Autowired
-    private PetRepository petRepository;
+    private UnitOfWork unitOfWork;
 
     public List<Pet> getAllPets() {
-        return petRepository.findAll();
+        return unitOfWork.getAll(Pet.class);
     }
 
     public Pet createPet(Pet pet) {
-        return petRepository.save(pet);
+        return unitOfWork.save(pet);
     }
 
     public Pet getPetById(Long id) {
-        return petRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pet not found"));
+        return unitOfWork.getById(Pet.class, id);
     }
 }

@@ -2,7 +2,7 @@ package com.dhbw.pawsitters.service.wallet;
 
 import com.dhbw.pawsitters.model.user.AppUser;
 import com.dhbw.pawsitters.model.wallet.Wallet;
-import com.dhbw.pawsitters.repository.wallet.WalletRepository;
+import com.dhbw.pawsitters.service.UnitOfWork;
 import com.dhbw.pawsitters.service.user.AppUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,22 +17,24 @@ public class WalletService {
     public static final BigDecimal INITIAL_EARNINGS = BigDecimal.ZERO.setScale(2);
 
     @Autowired
-    private WalletRepository walletRepository;
+    private UnitOfWork unitOfWork;
 
     @Autowired
     private AppUserService userService;
 
     @Transactional
     public Wallet getOrCreate(Long userId) {
-        return walletRepository.findByUserId(userId).orElseGet(() -> {
-            AppUser user = userService.getUserById(userId);
-            Wallet w = Wallet.builder()
-                    .user(user)
-                    .ownerCredit(SIGNUP_BONUS)
-                    .sitterEarnings(INITIAL_EARNINGS)
-                    .build();
-            return walletRepository.save(w);
-        });
+        return unitOfWork.getByProperty(Wallet.class, "user.id", userId).stream()
+                .findFirst()
+                .orElseGet(() -> {
+                    AppUser user = userService.getUserById(userId);
+                    Wallet w = Wallet.builder()
+                            .user(user)
+                            .ownerCredit(SIGNUP_BONUS)
+                            .sitterEarnings(INITIAL_EARNINGS)
+                            .build();
+                    return unitOfWork.save(w);
+                });
     }
 
     /**
@@ -54,7 +56,7 @@ public class WalletService {
 
         w.setOwnerCredit(w.getOwnerCredit().subtract(fromCredit));
         w.setSitterEarnings(w.getSitterEarnings().subtract(fromEarnings));
-        walletRepository.save(w);
+        unitOfWork.save(w);
 
         return new Split(fromCredit, fromEarnings);
     }
@@ -63,7 +65,7 @@ public class WalletService {
     public Wallet creditEarnings(Long userId, BigDecimal amount) {
         Wallet w = getOrCreate(userId);
         w.setSitterEarnings(w.getSitterEarnings().add(amount));
-        return walletRepository.save(w);
+        return unitOfWork.save(w);
     }
 
     @Transactional
@@ -75,7 +77,7 @@ public class WalletService {
         if (toSitterEarnings != null && toSitterEarnings.signum() > 0) {
             w.setSitterEarnings(w.getSitterEarnings().add(toSitterEarnings));
         }
-        return walletRepository.save(w);
+        return unitOfWork.save(w);
     }
 
     /** Zero out sitter earnings (mock withdrawal). Returns the amount withdrawn. */
@@ -87,7 +89,7 @@ public class WalletService {
             throw new RuntimeException("Nothing to withdraw");
         }
         w.setSitterEarnings(BigDecimal.ZERO.setScale(2));
-        walletRepository.save(w);
+        unitOfWork.save(w);
         return amount;
     }
 

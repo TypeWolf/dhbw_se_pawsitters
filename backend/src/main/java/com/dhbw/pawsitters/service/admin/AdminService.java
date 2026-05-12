@@ -2,7 +2,7 @@ package com.dhbw.pawsitters.service.admin;
 
 import com.dhbw.pawsitters.model.user.AppUser;
 import com.dhbw.pawsitters.model.user.Role;
-import com.dhbw.pawsitters.repository.user.AppUserRepository;
+import com.dhbw.pawsitters.service.UnitOfWork;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,15 +14,14 @@ import java.util.Set;
 public class AdminService {
 
     @Autowired
-    private AppUserRepository userRepository;
+    private UnitOfWork unitOfWork;
 
     /** Throws if the caller isn't an admin. Used by every /api/admin endpoint. */
     public void requireAdmin(Long requesterId) {
         if (requesterId == null) {
             throw new RuntimeException("Missing requesterId");
         }
-        AppUser user = userRepository.findById(requesterId)
-                .orElseThrow(() -> new RuntimeException("Requester not found"));
+        AppUser user = unitOfWork.getById(AppUser.class, requesterId);
         if (user.getRoles() == null || !user.getRoles().contains(Role.ADMIN)) {
             throw new RuntimeException("Admin role required");
         }
@@ -34,9 +33,8 @@ public class AdminService {
         if (roles == null || roles.isEmpty()) {
             throw new RuntimeException("A user must have at least one role");
         }
-        AppUser target = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new RuntimeException("Target user not found"));
+        AppUser target = unitOfWork.getById(AppUser.class, targetUserId);
         target.setRoles(EnumSet.copyOf(roles));
-        return userRepository.save(target);
+        return unitOfWork.save(target);
     }
 }
