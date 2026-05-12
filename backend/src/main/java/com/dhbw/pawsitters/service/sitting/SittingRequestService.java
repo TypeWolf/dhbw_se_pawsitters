@@ -29,27 +29,24 @@ public class SittingRequestService {
     }
 
     public List<SittingRequest> getOpenRequests() {
-        return requestRepository.findByStatus(SittingRequest.RequestStatus.PENDING);
+        return unitOfWork.getByProperty(SittingRequest.class, "status", SittingRequest.RequestStatus.PENDING);
     }
 
     public List<SittingRequest> getRequestsByRequester(Long requesterId) {
-        return requestRepository.findByRequesterId(requesterId);
+        return unitOfWork.getByProperty(SittingRequest.class, "requester.id", requesterId);
     }
 
     public List<SittingRequest> getRequestsBySitter(Long sitterId) {
-        return requestRepository.findBySitterId(sitterId);
+        return unitOfWork.getByProperty(SittingRequest.class, "sitter.id", sitterId);
     }
 
     @Transactional
     public SittingRequest createRequest(SittingRequest request) {
         request.setStatus(SittingRequest.RequestStatus.PENDING);
-        return unitOfWork.save(request);
-        SittingRequest saved = requestRepository.save(request);
+        SittingRequest saved = unitOfWork.save(request);
 
         BigDecimal price = saved.getPriceOffered();
         if (price != null && price.compareTo(BigDecimal.ZERO) > 0) {
-            // Will throw "Insufficient funds" if the owner's wallet doesn't cover it,
-            // rolling back the request creation thanks to @Transactional.
             paymentService.hold(saved.getId(), saved.getRequester().getId(), price);
         }
         return saved;
@@ -58,9 +55,6 @@ public class SittingRequestService {
     @Transactional
     public SittingRequest acceptRequest(Long requestId, Long sitterId) {
         SittingRequest request = unitOfWork.getById(SittingRequest.class, requestId);
-        
-        SittingRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
 
         if (request.getRequester().getId().equals(sitterId)) {
             throw new RuntimeException("Owner cannot accept their own sitting request");
@@ -79,8 +73,7 @@ public class SittingRequestService {
 
     @Transactional
     public SittingRequest cancelRequest(Long requestId, Long userId) {
-        SittingRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+        SittingRequest request = unitOfWork.getById(SittingRequest.class, requestId);
 
         if (!request.getRequester().getId().equals(userId)) {
             throw new RuntimeException("Only the requester can cancel this request");
@@ -93,13 +86,12 @@ public class SittingRequestService {
                 .ifPresent(p -> paymentService.refund(p.getId()));
 
         request.setStatus(SittingRequest.RequestStatus.CANCELLED);
-        return requestRepository.save(request);
+        return unitOfWork.save(request);
     }
 
     @Transactional
     public SittingRequest completeRequest(Long requestId, Long userId) {
-        SittingRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+        SittingRequest request = unitOfWork.getById(SittingRequest.class, requestId);
 
         if (!request.getRequester().getId().equals(userId)) {
             throw new RuntimeException("Only the requester can confirm completion");
@@ -112,7 +104,7 @@ public class SittingRequestService {
                 .ifPresent(p -> paymentService.release(p.getId()));
 
         request.setStatus(SittingRequest.RequestStatus.COMPLETED);
-        return requestRepository.save(request);
+        return unitOfWork.save(request);
     }
 
     public void deleteRequest(Long id) {

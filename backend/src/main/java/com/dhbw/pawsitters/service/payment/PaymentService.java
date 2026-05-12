@@ -2,8 +2,7 @@ package com.dhbw.pawsitters.service.payment;
 
 import com.dhbw.pawsitters.model.payment.Payment;
 import com.dhbw.pawsitters.model.sitting.SittingRequest;
-import com.dhbw.pawsitters.repository.payment.PaymentRepository;
-import com.dhbw.pawsitters.repository.sitting.SittingRequestRepository;
+import com.dhbw.pawsitters.service.UnitOfWork;
 import com.dhbw.pawsitters.service.wallet.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,19 +11,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class PaymentService {
 
     @Autowired
-    private PaymentRepository paymentRepository;
+    private UnitOfWork unitOfWork;
 
     @Autowired
     private WalletService walletService;
-
-    @Autowired
-    private SittingRequestRepository requestRepository;
 
     @Transactional
     public Payment hold(Long sittingRequestId, Long payerId, BigDecimal amount) {
@@ -41,18 +38,16 @@ public class PaymentService {
                 .status(Payment.Status.HELD)
                 .createdAt(LocalDateTime.now())
                 .build();
-        return paymentRepository.save(p);
+        return unitOfWork.save(p);
     }
 
     @Transactional
     public Payment release(Long paymentId) {
-        Payment p = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
+        Payment p = unitOfWork.getById(Payment.class, paymentId);
         if (p.getStatus() != Payment.Status.HELD) {
             throw new RuntimeException("Payment is not HELD");
         }
-        SittingRequest r = requestRepository.findById(p.getSittingRequestId())
-                .orElseThrow(() -> new RuntimeException("Sitting request not found"));
+        SittingRequest r = unitOfWork.getById(SittingRequest.class, p.getSittingRequestId());
         if (r.getSitter() == null) {
             throw new RuntimeException("Cannot release: no sitter has accepted yet");
         }
@@ -61,20 +56,19 @@ public class PaymentService {
         p.setPayeeId(sitterId);
         p.setStatus(Payment.Status.RELEASED);
         p.setResolvedAt(LocalDateTime.now());
-        return paymentRepository.save(p);
+        return unitOfWork.save(p);
     }
 
     @Transactional
     public Payment refund(Long paymentId) {
-        Payment p = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
+        Payment p = unitOfWork.getById(Payment.class, paymentId);
         if (p.getStatus() != Payment.Status.HELD) {
             throw new RuntimeException("Payment is not HELD");
         }
         walletService.creditRefund(p.getPayerId(), p.getFromOwnerCredit(), p.getFromSitterEarnings());
         p.setStatus(Payment.Status.REFUNDED);
         p.setResolvedAt(LocalDateTime.now());
-        return paymentRepository.save(p);
+        return unitOfWork.save(p);
     }
 
     @Transactional
@@ -88,14 +82,18 @@ public class PaymentService {
                 .createdAt(now)
                 .resolvedAt(now)
                 .build();
-        return paymentRepository.save(p);
+        return unitOfWork.save(p);
     }
 
     public Optional<Payment> findHeldForRequest(Long sittingRequestId) {
-        return paymentRepository.findFirstBySittingRequestIdAndStatus(sittingRequestId, Payment.Status.HELD);
+        return unitOfWork.getByProperties(Payment.class, Map.of(
+                "sittingRequestId", sittingRequestId,
+                "status", Payment.Status.HELD
+        )).stream().findFirst();
     }
 
     public List<Payment> historyFor(Long userId) {
-        return paymentRepository.findByPayerIdOrPayeeIdOrderByCreatedAtDesc(userId, userId);
+        String jpql = "SELECT p FROM Payment p WHERE p.payerId = :uid OR p.payeeId = :uid ORDER BY p.createdAt DESC";
+        return unitOfWork.query(jpql, Payment.class, Map.of("uid", userId));
     }
 }

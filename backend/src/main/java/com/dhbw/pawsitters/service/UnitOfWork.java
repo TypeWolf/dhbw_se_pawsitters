@@ -54,6 +54,38 @@ public class UnitOfWork {
                 .getResultList();
     }
 
+    public <T> List<T> getByProperties(Class<T> entityClass, Map<String, Object> params) {
+        StringBuilder jpql = new StringBuilder(String.format("SELECT e FROM %s e WHERE 1=1", entityClass.getSimpleName()));
+        params.keySet().forEach(k -> jpql.append(String.format(" AND e.%s = :%s", k, k.replace(".", ""))));
+        
+        var query = entityManager.createQuery(jpql.toString(), entityClass);
+        params.forEach((k, v) -> query.setParameter(k.replace(".", ""), v));
+        return query.getResultList();
+    }
+
+    public <T> List<T> getByPropertiesSorted(Class<T> entityClass, Map<String, Object> params, String sortField, boolean ascending) {
+        StringBuilder jpql = new StringBuilder(String.format("SELECT e FROM %s e WHERE 1=1", entityClass.getSimpleName()));
+        params.keySet().forEach(k -> jpql.append(String.format(" AND e.%s = :%s", k, k.replace(".", ""))));
+        jpql.append(String.format(" ORDER BY e.%s %s", sortField, ascending ? "ASC" : "DESC"));
+        
+        var query = entityManager.createQuery(jpql.toString(), entityClass);
+        params.forEach((k, v) -> query.setParameter(k.replace(".", ""), v));
+        return query.getResultList();
+    }
+
+    public <T> long count(Class<T> entityClass) {
+        String jpql = String.format("SELECT COUNT(e) FROM %s e", entityClass.getSimpleName());
+        return entityManager.createQuery(jpql, Long.class).getSingleResult();
+    }
+
+    public <T> List<T> query(String jpql, Class<T> entityClass, Map<String, Object> params) {
+        var query = entityManager.createQuery(jpql, entityClass);
+        if (params != null) {
+            params.forEach(query::setParameter);
+        }
+        return query.getResultList();
+    }
+
     // Specialized but still generic method: Get all by user/owner
     // This assumes the entity has a field that maps to AppUser (like 'owner' or 'requester')
     public <T> List<T> getAllByUser(Class<T> entityClass, AppUser user, String fieldName) {
