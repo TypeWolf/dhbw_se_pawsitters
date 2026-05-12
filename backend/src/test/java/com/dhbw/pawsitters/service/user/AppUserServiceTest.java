@@ -44,7 +44,7 @@ public class AppUserServiceTest {
                 .firstName("John")
                 .lastName("Doe")
                 .email("john.doe@example.com")
-                .password("plainPassword123")
+                .password("SecureP@ss123!")
                 .build();
     }
 
@@ -53,15 +53,15 @@ public class AppUserServiceTest {
         AppUser registeredUser = userService.register(testUser);
 
         assertNotNull(registeredUser.getId());
-        assertNotEquals("plainPassword123", registeredUser.getPassword());
-        assertTrue(passwordEncoder.matches("plainPassword123", registeredUser.getPassword()));
+        assertNotEquals("SecureP@ss123!", registeredUser.getPassword());
+        assertTrue(passwordEncoder.matches("SecureP@ss123!", registeredUser.getPassword()));
     }
 
     @Test
     void testLoginWithCorrectPassword() {
         userService.register(testUser);
         
-        AppUser loggedInUser = userService.login("john.doe@example.com", "plainPassword123");
+        AppUser loggedInUser = userService.login("john.doe@example.com", "SecureP@ss123!");
         
         assertNotNull(loggedInUser);
         assertEquals("john.doe@example.com", loggedInUser.getEmail());
@@ -72,7 +72,7 @@ public class AppUserServiceTest {
         userService.register(testUser);
         
         assertThrows(RuntimeException.class, () -> {
-            userService.login("john.doe@example.com", "wrongPassword");
+            userService.login("john.doe@example.com", "wrongPassword!");
         });
     }
 }

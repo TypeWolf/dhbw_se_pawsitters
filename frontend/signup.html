@@ -36,7 +36,17 @@
                     </div>
                     <div class="field">
                         <label data-i18n="password">Password</label>
-                        <input type="password" id="password" minlength="6" required>
+                        <input type="password" id="password" minlength="12" required>
+                        <div id="passwordRequirements" class="password-reqs">
+                            <p class="req-title" data-i18n="pwdReqTitle">Password must contain:</p>
+                            <ul>
+                                <li id="reqLength" data-i18n="pwdReqLength">At least 12 characters</li>
+                                <li id="reqUpper" data-i18n="pwdReqUpper">At least one uppercase letter</li>
+                                <li id="reqLower" data-i18n="pwdReqLower">At least one lowercase letter</li>
+                                <li id="reqNumber" data-i18n="pwdReqNumber">At least one number</li>
+                                <li id="reqSpecial" data-i18n="pwdReqSpecial">At least one special character (!@#$%^&*)</li>
+                            </ul>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-block" data-i18n="register">Create account</button>
                 </form>
@@ -60,9 +70,37 @@
         if (Session.isLoggedIn()) window.location.href = 'dashboard.html';
 
         const alertBox = document.getElementById('alert');
+        const passwordInput = document.getElementById('password');
+        
+        const reqs = {
+            length: { el: document.getElementById('reqLength'), check: (v) => v.length >= 12 },
+            upper: { el: document.getElementById('reqUpper'), check: (v) => /[A-Z]/.test(v) },
+            lower: { el: document.getElementById('reqLower'), check: (v) => /[a-z]/.test(v) },
+            number: { el: document.getElementById('reqNumber'), check: (v) => /[0-9]/.test(v) },
+            special: { el: document.getElementById('reqSpecial'), check: (v) => /[!@#$%^&*]/.test(v) }
+        };
+
+        const validatePassword = (val) => {
+            let allValid = true;
+            for (const key in reqs) {
+                const isValid = reqs[key].check(val);
+                reqs[key].el.className = isValid ? 'valid' : 'invalid';
+                if (!isValid) allValid = false;
+            }
+            return allValid;
+        };
+
+        passwordInput.addEventListener('input', (e) => validatePassword(e.target.value));
+
         document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             alertBox.innerHTML = '';
+            
+            if (!validatePassword(passwordInput.value)) {
+                alert(I18n.t('pwdInsecure'));
+                return;
+            }
+
             const payload = {
                 firstName: document.getElementById('firstName').value,
                 lastName: document.getElementById('lastName').value,

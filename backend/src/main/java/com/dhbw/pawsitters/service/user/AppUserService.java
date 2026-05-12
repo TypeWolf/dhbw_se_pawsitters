@@ -20,6 +20,8 @@ public class AppUserService {
     private PasswordEncoder passwordEncoder;
 
     public AppUser register(AppUser user) {
+        validatePassword(user.getPassword());
+
         // Check if email exists using generic getByProperty
         boolean exists = !unitOfWork.getByProperty(AppUser.class, "email", user.getEmail()).isEmpty();
         
@@ -29,6 +31,24 @@ public class AppUserService {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return unitOfWork.save(user);
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.length() < 12) {
+            throw new RuntimeException("Password must be at least 12 characters long");
+        }
+        if (!password.matches(".*[A-Z].*")) {
+            throw new RuntimeException("Password must contain at least one uppercase letter");
+        }
+        if (!password.matches(".*[a-z].*")) {
+            throw new RuntimeException("Password must contain at least one lowercase letter");
+        }
+        if (!password.matches(".*[0-9].*")) {
+            throw new RuntimeException("Password must contain at least one number");
+        }
+        if (!password.matches(".*[!@#$%^&*].*")) {
+            throw new RuntimeException("Password must contain at least one special character (!@#$%^&*)");
+        }
     }
 
     public AppUser login(String email, String password) {
