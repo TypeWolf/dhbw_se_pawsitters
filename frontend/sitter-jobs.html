@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitter jobs — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .job-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .job-card { display: flex; flex-direction: column; gap: 10px; }
+        .job-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .job-head h3 { margin: 0; }
+        .pet-emoji { font-size: 1.75rem; }
+        .job-meta { color: var(--muted); font-size: 0.9rem; }
+        .job-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.92rem; }
+        .job-row strong { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+        .price-tag { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--text); color: #fff; padding: 12px 20px; border-radius: 999px;
+            box-shadow: var(--shadow-hover); opacity: 0; transition: opacity 0.2s; pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <div class="page-header">
+            <div>
+                <h1 data-i18n="jobsTitle">Open sitter jobs</h1>
+                <p data-i18n="jobsSub">Browse pet-owners looking for a sitter near you.</p>
+            </div>
+            <a class="btn btn-secondary" href="calendar.html" data-i18n="goToCalendar">My calendar</a>
+        </div>
+
+        <div id="alert"></div>
+        <div id="container"></div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (Session.requireAuth('SITTER')) {
+            Layout.init('jobs');
+
+            const container = document.getElementById('container');
+            const alertBox = document.getElementById('alert');
+            const toast = document.getElementById('toast');
+
+            const HANDOVER_LABEL = {
+                SITTER_HOME: 'handoverSitterHome',
+                MEET_AT_PLACE: 'handoverMeet',
+                OWNER_HOME_PICKUP: 'handoverPickup'
+            };
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            function emojiFor(species) {
+                const s = (species || '').toLowerCase();
+                if (s.includes('dog') || s.includes('hund')) return '🐕';
+                if (s.includes('cat') || s.includes('katze')) return '🐈';
+                if (s.includes('bird') || s.includes('vogel')) return '🐦';
+                if (s.includes('rabbit') || s.includes('hase')) return '🐇';
+                if (s.includes('fish')) return '🐟';
+                return '🐾';
+            }
+
+            function formatRange(start, end) {
+                const s = new Date(start);
+                const e = new Date(end);
+                const sameDay = s.toDateString() === e.toDateString();
+                const dateOpts = { weekday: 'short', day: '2-digit', month: 'short' };
+                const timeOpts = { hour: '2-digit', minute: '2-digit' };
+                if (sameDay) {
+                    return `${s.toLocaleDateString(undefined, dateOpts)}, ${s.toLocaleTimeString(undefined, timeOpts)} – ${e.toLocaleTimeString(undefined, timeOpts)}`;
+                }
+                return `${s.toLocaleDateString(undefined, dateOpts)} ${s.toLocaleTimeString(undefined, timeOpts)} – ${e.toLocaleDateString(undefined, dateOpts)} ${e.toLocaleTimeString(undefined, timeOpts)}`;
+            }
+
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2400);
+            }
+
+            async function load() {
+                container.innerHTML = `<div class="empty"><div class="emoji">⏳</div><p>${I18n.t('loading')}</p></div>`;
+                try {
+                    const jobs = await Api.requests.listOpen();
+                    const me = Session.user.id;
+                    // Hide my own posted requests — sitter shouldn't accept their own.
+                    const others = jobs.filter(j => j.requester && j.requester.id !== me);
+                    render(others);
+                } catch (err) {
+                    container.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            }
+
+            function render(jobs) {
+                if (jobs.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <div class="emoji">🦴</div>
+                            <h3>${I18n.t('noJobs')}</h3>
+                            <p>${I18n.t('noJobsSub')}</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = `<div class="job-grid">${jobs.map(j => {
+                    const handover = j.handoverType ? I18n.t(HANDOVER_LABEL[j.handoverType]) : '—';
+                    const price = j.priceOffered != null ? `€${Number(j.priceOffered).toFixed(2)}` : '—';
+                    const owner = j.requester ? `${escapeHtml(j.requester.firstName)} ${escapeHtml(j.requester.lastName)}` : '—';
+                    return `
+                        <div class="card card-hover job-card">
+                            <div class="job-head">
+                                <div>
+                                    <h3>${escapeHtml(j.pet ? j.pet.name : 'Pet')}</h3>
+                                    <div class="job-meta">${escapeHtml(j.pet ? j.pet.species : '')}</div>
+                                </div>
+                                <div class="pet-emoji">${emojiFor(j.pet && j.pet.species)}</div>
+                            </div>
+                            <div class="job-meta">${formatRange(j.startTime, j.endTime)}</div>
+                            <div class="job-row">
+                                <div>
+                                    <strong>${I18n.t('owner')}</strong>
+                                    ${owner}
+                                </div>
+                                <div>
+                                    <strong>${I18n.t('handover')}</strong>
+                                    ${handover}
+                                </div>
+                            </div>
+                            ${j.handoverLocation ? `<div class="job-meta">📍 ${escapeHtml(j.handoverLocation)}</div>` : ''}
+                            ${j.handoverNotes ? `<div class="job-meta">"${escapeHtml(j.handoverNotes)}"</div>` : ''}
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:8px;">
+                                <span class="price-tag">${price}</span>
+                                <button class="btn" data-accept="${j.id}">${I18n.t('acceptJob')}</button>
+                            </div>
+                        </div>`;
+                }).join('')}</div>`;
+
+                container.querySelectorAll('[data-accept]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        btn.disabled = true;
+                        try {
+                            await Api.requests.accept(btn.dataset.accept, Session.user.id);
+                            showToast(I18n.t('jobAcceptedToast'));
+                            load();
+                        } catch (err) {
+                            btn.disabled = false;
+                            alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                        }
+                    });
+                });
+            }
+
+            document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
+            load();
+        }
+    </script>
+</body>
+</html>
