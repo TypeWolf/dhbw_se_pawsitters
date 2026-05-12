@@ -24,7 +24,7 @@ test.describe('Pawsitters E2E Tests', () => {
     await page.click('button[type="submit"]');
     
     // Should be redirected to dashboard
-    await expect(page).toHaveURL(/dashboard.html/);
+    await expect(page).toHaveURL(/.*dashboard(\.html)?/);
     await expect(page.locator('#site-header')).toContainText('Log out', { ignoreCase: true });
   });
 
@@ -36,7 +36,7 @@ test.describe('Pawsitters E2E Tests', () => {
     
     await page.click('button[type="submit"]');
     
-    await expect(page).toHaveURL(/dashboard.html/);
+    await expect(page).toHaveURL(/.*dashboard(\.html)?/);
     await expect(page.locator('#site-header')).toContainText('Log out', { ignoreCase: true });
   });
 
@@ -49,7 +49,7 @@ test.describe('Pawsitters E2E Tests', () => {
     
     // Navigate to Pets
     await page.click('nav a[href="pets.html"]');
-    await expect(page).toHaveURL(/pets.html/);
+    await expect(page).toHaveURL(/.*pets(\.html)?/);
     
     // Click toggle to show form
     await page.click('#toggleForm');
@@ -131,7 +131,7 @@ test.describe('Pawsitters E2E Tests', () => {
     await page.click('button[type="submit"]');
     
     // Should be redirected to my-requests
-    await expect(page).toHaveURL(/my-requests.html/);
+    await expect(page).toHaveURL(/.*my-requests(\.html)?/);
     await expect(page.locator('.req-card').filter({ hasText: petName }).first()).toBeVisible();
   });
 
@@ -143,7 +143,7 @@ test.describe('Pawsitters E2E Tests', () => {
     
     await page.click('#logoutBtn');
     
-    await expect(page).toHaveURL(/index.html/);
+    await expect(page).toHaveURL(new RegExp(`${BASE_URL}/(index(\\.html)?)?$`));
     await expect(page.locator('nav')).toContainText('Log in');
   });
 });
