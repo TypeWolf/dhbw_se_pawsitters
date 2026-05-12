@@ -11,15 +11,19 @@ const Layout = {
 
         let nav;
         if (loggedIn) {
-            nav = [
+            const items = [
                 link('dashboard.html', 'navDashboard', 'dashboard'),
                 link('pets.html', 'navPets', 'pets'),
-                link('my-requests.html', 'navFindSitter', 'requests'),
+                link('my-requests.html', 'navMyRequests', 'requests'),
                 link('sitter-jobs.html', 'navJobs', 'jobs'),
                 link('calendar.html', 'navCalendar', 'calendar'),
-                link('wallet.html', 'navWallet', 'wallet'),
-                `<a href="#" id="logoutBtn" data-i18n="navLogout">${I18n.t('navLogout')}</a>`
-            ].join('');
+                link('wallet.html', 'navWallet', 'wallet')
+            ];
+            if (Session.hasRole && Session.hasRole('ADMIN')) {
+                items.push(link('admin.html', 'navAdmin', 'admin'));
+            }
+            items.push(`<a href="#" id="logoutBtn" data-i18n="navLogout">${I18n.t('navLogout')}</a>`);
+            nav = items.join('');
         } else {
             nav = [
                 link('index.html', 'navHome', 'home'),

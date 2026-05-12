@@ -16,8 +16,23 @@ public class SittingRequestController {
     private SittingRequestService requestService;
 
     @GetMapping
+    public List<SittingRequest> getOpenRequests() {
+        return requestService.getOpenRequests();
+    }
+
+    @GetMapping("/all")
     public List<SittingRequest> getAllRequests() {
         return requestService.getAllRequests();
+    }
+
+    @GetMapping("/mine")
+    public List<SittingRequest> getMyRequests(@RequestParam Long userId) {
+        return requestService.getRequestsByRequester(userId);
+    }
+
+    @GetMapping("/booked")
+    public List<SittingRequest> getBookedRequests(@RequestParam Long sitterId) {
+        return requestService.getRequestsBySitter(sitterId);
     }
 
     @PostMapping
@@ -28,6 +43,16 @@ public class SittingRequestController {
     @PutMapping("/{id}/accept")
     public SittingRequest acceptRequest(@PathVariable Long id, @RequestParam Long sitterId) {
         return requestService.acceptRequest(id, sitterId);
+    }
+
+    @PutMapping("/{id}/cancel")
+    public SittingRequest cancelRequest(@PathVariable Long id, @RequestParam Long userId) {
+        return requestService.cancelRequest(id, userId);
+    }
+
+    @PutMapping("/{id}/complete")
+    public SittingRequest completeRequest(@PathVariable Long id, @RequestParam Long userId) {
+        return requestService.completeRequest(id, userId);
     }
 
     @DeleteMapping("/{id}")

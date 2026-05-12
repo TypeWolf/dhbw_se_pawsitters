@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Admin-specific: dense, utilitarian. Visually distinct from the marketing surfaces. */
+        body { background: #f4f5f7; }
+        .admin-header { background: #1f2530; color: #fff; padding: 24px 0; margin-bottom: 24px; }
+        .admin-header h1 { margin: 0; }
+        .admin-header p { color: #c2c8d2; margin: 4px 0 0; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+        .stat-card .label {
+            font-size: 0.72rem;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-top: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 16px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font: inherit;
+            font-weight: 500;
+            color: var(--muted);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        table.admin {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
+        }
+        table.admin th, table.admin td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        table.admin th { background: #fafafa; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        table.admin tr:last-child td { border-bottom: none; }
+        table.admin tr:hover td { background: #fbfaf6; }
+        table.admin .id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-size: 0.85rem; }
+        table.admin .num { font-variant-numeric: tabular-nums; }
+
+        .roles-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+        .role-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 0.78rem;
+            cursor: pointer;
+            user-select: none;
+            background: #fff;
+        }
+        .role-toggle input { margin: 0; }
+        .role-toggle.on { background: var(--text); color: #fff; border-color: var(--text); }
+
+        .scroll-x { overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <section class="admin-header">
+        <div class="container">
+            <h1 data-i18n="adminTitle">Admin dashboard</h1>
+            <p data-i18n="adminSub">Internal overview of all activity on Pawsitters.</p>
+        </div>
+    </section>
+
+    <main class="container">
+        <div id="alert"></div>
+
+        <div class="stat-grid" id="statsGrid"></div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="users" data-i18n="adminTabUsers">Users</button>
+            <button class="tab" data-tab="pets" data-i18n="adminTabPets">Pets</button>
+            <button class="tab" data-tab="requests" data-i18n="adminTabRequests">Requests</button>
+            <button class="tab" data-tab="payments" data-i18n="adminTabPayments">Payments</button>
+        </div>
+
+        <div class="panel active" id="panel-users"><div class="scroll-x" id="usersTable"></div></div>
+        <div class="panel" id="panel-pets"><div class="scroll-x" id="petsTable"></div></div>
+        <div class="panel" id="panel-requests"><div class="scroll-x" id="requestsTable"></div></div>
+        <div class="panel" id="panel-payments"><div class="scroll-x" id="paymentsTable"></div></div>
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (Session.requireAuth('ADMIN')) {
+            Layout.init('admin');
+
+            const alertBox = document.getElementById('alert');
+            const me = Session.user.id;
+            const ALL_ROLES = ['PET_OWNER', 'SITTER', 'ADMIN'];
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+            function formatDate(iso) {
+                if (!iso) return '—';
+                return new Date(iso).toLocaleString(undefined, {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            }
+            function money(v) {
+                if (v == null) return '—';
+                return `€${Number(v).toFixed(2)}`;
+            }
+
+            function statCard(labelKey, value) {
+                return `<div class="stat-card">
+                    <div class="label" data-i18n="${labelKey}">${I18n.t(labelKey)}</div>
+                    <div class="value">${value}</div>
+                </div>`;
+            }
+
+            function renderStats({ users, pets, requests, payments }) {
+                const openCount = requests.filter(r => r.status === 'PENDING').length;
+                const bookedCount = requests.filter(r => r.status === 'ACCEPTED').length;
+                const completedCount = requests.filter(r => r.status === 'COMPLETED').length;
+                const heldTotal = payments
+                    .filter(p => p.status === 'HELD')
+                    .reduce((s, p) => s + Number(p.amount || 0), 0);
+                document.getElementById('statsGrid').innerHTML = [
+                    statCard('statTotalUsers', users.length),
+                    statCard('statTotalPets', pets.length),
+                    statCard('statOpenRequests', openCount),
+                    statCard('statBookedRequests', bookedCount),
+                    statCard('statCompletedRequests', completedCount),
+                    statCard('statHeldFunds', money(heldTotal))
+                ].join('');
+            }
+
+            function renderUsersTable(users) {
+                const rows = users.map(u => {
+                    const roles = u.roles || [];
+                    const toggles = ALL_ROLES.map(r => {
+                        const on = roles.includes(r);
+                        return `<label class="role-toggle ${on ? 'on' : ''}">
+                            <input type="checkbox" data-user="${u.id}" data-role="${r}" ${on ? 'checked' : ''}> ${r}
+                        </label>`;
+                    }).join('');
+                    return `<tr>
+                        <td class="id">${u.id}</td>
+                        <td>${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)}</td>
+                        <td>${escapeHtml(u.email)}</td>
+                        <td>${escapeHtml(u.phoneNumber || '—')}</td>
+                        <td><div class="roles-cell">${toggles}</div></td>
+                    </tr>`;
+                }).join('');
+                document.getElementById('usersTable').innerHTML = `
+                    <table class="admin">
+                        <thead><tr>
+                            <th data-i18n="thId">ID</th>
+                            <th data-i18n="thName">Name</th>
+                            <th data-i18n="thEmail">Email</th>
+                            <th data-i18n="thPhone">Phone</th>
+                            <th data-i18n="thRoles">Roles</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+                I18n.apply(document.getElementById('usersTable'));
+
+                document.querySelectorAll('#usersTable input[type=checkbox]').forEach(cb => {
+                    cb.addEventListener('change', async () => {
+                        const userId = parseInt(cb.dataset.user, 10);
+                        const checked = Array.from(document.querySelectorAll(`#usersTable input[data-user="${userId}"]:checked`))
+                            .map(c => c.dataset.role);
+                        if (checked.length === 0) {
+                            // Revert — a user must keep at least one role.
+                            cb.checked = true;
+                            alertBox.innerHTML = `<div class="alert alert-error">A user must keep at least one role.</div>`;
+                            return;
+                        }
+                        try {
+                            await Api.admin.setRoles(me, userId, checked);
+                            // Update the visual pill state without a full reload.
+                            document.querySelectorAll(`#usersTable input[data-user="${userId}"]`).forEach(other => {
+                                other.parentElement.classList.toggle('on', other.checked);
+                            });
+                        } catch (err) {
+                            cb.checked = !cb.checked;
+                            alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                        }
+                    });
+                });
+            }
+
+            function renderPetsTable(pets) {
+                const rows = pets.map(p => `<tr>
+                    <td class="id">${p.id}</td>
+                    <td>${escapeHtml(p.name)}</td>
+                    <td>${escapeHtml(p.species)}</td>
+                    <td>${escapeHtml(p.breed || '—')}</td>
+                    <td class="num">${p.age != null ? p.age : '—'}</td>
+                    <td>${p.owner ? `${escapeHtml(p.owner.firstName)} ${escapeHtml(p.owner.lastName)} <span class="id">#${p.owner.id}</span>` : '—'}</td>
+                </tr>`).join('');
+                document.getElementById('petsTable').innerHTML = `
+                    <table class="admin">
+                        <thead><tr>
+                            <th data-i18n="thId">ID</th>
+                            <th data-i18n="thName">Name</th>
+                            <th data-i18n="thSpecies">Species</th>
+                            <th data-i18n="thBreed">Breed</th>
+                            <th data-i18n="thAge">Age</th>
+                            <th data-i18n="thOwner">Owner</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+                I18n.apply(document.getElementById('petsTable'));
+            }
+
+            const STATUS_BADGE = {
+                PENDING: 'badge-pending',
+                ACCEPTED: 'badge-accepted',
+                COMPLETED: 'badge-completed',
+                CANCELLED: 'badge-cancelled',
+                REJECTED: 'badge-cancelled'
+            };
+
+            function renderRequestsTable(requests) {
+                const rows = requests.map(r => {
+                    const start = formatDate(r.startTime);
+                    const end = formatDate(r.endTime);
+                    return `<tr>
+                        <td class="id">${r.id}</td>
+                        <td>${r.pet ? escapeHtml(r.pet.name) : '—'} <span class="id">#${r.pet ? r.pet.id : '—'}</span></td>
+                        <td>${r.requester ? `${escapeHtml(r.requester.firstName)} ${escapeHtml(r.requester.lastName)}` : '—'}</td>
+                        <td>${r.sitter ? `${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}` : '—'}</td>
+                        <td>${start}<br><span class="id">→ ${end}</span></td>
+                        <td class="num">${money(r.priceOffered)}</td>
+                        <td>${escapeHtml(r.handoverType || '—')}${r.handoverLocation ? `<br><span class="id">${escapeHtml(r.handoverLocation)}</span>` : ''}</td>
+                        <td><span class="badge ${STATUS_BADGE[r.status] || ''}">${r.status || '—'}</span></td>
+                    </tr>`;
+                }).join('');
+                document.getElementById('requestsTable').innerHTML = `
+                    <table class="admin">
+                        <thead><tr>
+                            <th data-i18n="thId">ID</th>
+                            <th data-i18n="thPet">Pet</th>
+                            <th data-i18n="thRequester">Requester</th>
+                            <th data-i18n="thSitter">Sitter</th>
+                            <th data-i18n="thWhen">When</th>
+                            <th data-i18n="thPrice">Price</th>
+                            <th data-i18n="thHandover">Handover</th>
+                            <th data-i18n="thStatus">Status</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+                I18n.apply(document.getElementById('requestsTable'));
+            }
+
+            function renderPaymentsTable(payments) {
+                const rows = payments.map(p => `<tr>
+                    <td class="id">${p.id}</td>
+                    <td>${p.sittingRequestId ? `#${p.sittingRequestId}` : '—'}</td>
+                    <td class="id">#${p.payerId}</td>
+                    <td class="id">${p.payeeId ? '#' + p.payeeId : '—'}</td>
+                    <td class="num">${money(p.amount)}</td>
+                    <td class="num">${money(p.fromOwnerCredit)}</td>
+                    <td class="num">${money(p.fromSitterEarnings)}</td>
+                    <td><span class="badge badge-${(p.status || '').toLowerCase()}">${p.status}</span></td>
+                    <td>${formatDate(p.resolvedAt || p.createdAt)}</td>
+                </tr>`).join('');
+                document.getElementById('paymentsTable').innerHTML = `
+                    <table class="admin">
+                        <thead><tr>
+                            <th data-i18n="thId">ID</th>
+                            <th>Request</th>
+                            <th>Payer</th>
+                            <th>Payee</th>
+                            <th data-i18n="thAmount">Amount</th>
+                            <th data-i18n="thFromCredit">From credit</th>
+                            <th data-i18n="thFromEarnings">From earnings</th>
+                            <th data-i18n="thStatus">Status</th>
+                            <th data-i18n="thDate">Date</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+                I18n.apply(document.getElementById('paymentsTable'));
+            }
+
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+                    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tab.dataset.tab}`));
+                });
+            });
+
+            async function load() {
+                try {
+                    const [users, pets, requests, payments] = await Promise.all([
+                        Api.admin.users(me),
+                        Api.admin.pets(me),
+                        Api.admin.requests(me),
+                        Api.admin.payments(me)
+                    ]);
+                    renderStats({ users, pets, requests, payments });
+                    renderUsersTable(users);
+                    renderPetsTable(pets);
+                    renderRequestsTable(requests);
+                    renderPaymentsTable(payments);
+                } catch (err) {
+                    const msg = /admin/i.test(err.message) ? I18n.t('adminAccessDenied') : err.message;
+                    alertBox.innerHTML = `<div class="alert alert-error">${msg}</div>`;
+                }
+            }
+
+            document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
+            load();
+        }
+    </script>
+</body>
+</html>

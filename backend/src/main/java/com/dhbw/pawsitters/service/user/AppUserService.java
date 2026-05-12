@@ -24,13 +24,21 @@ public class AppUserService {
             throw new RuntimeException("Email already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            user.setRoles(EnumSet.of(Role.PET_OWNER, Role.SITTER));
+        }
+        // Bootstrap: the very first registered user also becomes an admin so
+        // there's always someone who can reach /admin without manual DB tweaks.
+        if (userRepository.count() == 0) {
+            user.getRoles().add(Role.ADMIN);
+        }
         return userRepository.save(user);
     }
 
     public AppUser login(String email, String password) {
         AppUser user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }

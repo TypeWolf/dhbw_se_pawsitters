@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -42,6 +43,17 @@ public class SittingRequest {
 
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal priceOffered;
+
+    @Enumerated(EnumType.STRING)
+    private HandoverType handoverType;
+
+    private String handoverLocation;
+
+    @Column(length = 500)
+    private String handoverNotes;
 
     public enum RequestStatus {
         PENDING,

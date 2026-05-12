@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My pets — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+        .pet-card h3 { margin-bottom: 4px; }
+        .pet-meta { color: var(--muted); font-size: 0.9rem; }
+        .pet-emoji { font-size: 2rem; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <div class="page-header">
+            <div>
+                <h1 data-i18n="petsTitle">My pets</h1>
+                <p data-i18n="petsSub">Add the pets a sitter might look after for you.</p>
+            </div>
+            <button class="btn" id="toggleForm" data-i18n="addPet">Add a pet</button>
+        </div>
+
+        <div id="alert"></div>
+
+        <div class="card" id="petFormCard" style="display:none; margin-bottom: 24px;">
+            <h3 data-i18n="addPet">Add a pet</h3>
+            <form id="petForm" class="stack" style="max-width: 480px;">
+                <div class="field">
+                    <label data-i18n="petName">Name</label>
+                    <input type="text" id="petName" required>
+                </div>
+                <div class="field">
+                    <label data-i18n="petSpecies">Species</label>
+                    <input type="text" id="petSpecies" required>
+                </div>
+                <div class="field">
+                    <label data-i18n="petBreed">Breed (optional)</label>
+                    <input type="text" id="petBreed">
+                </div>
+                <div class="field">
+                    <label data-i18n="petAge">Age (years)</label>
+                    <input type="number" id="petAge" min="0" max="60">
+                </div>
+                <button type="submit" class="btn" data-i18n="savePet">Save pet</button>
+            </form>
+        </div>
+
+        <div id="petsContainer"></div>
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (Session.requireAuth()) {
+            Layout.init('pets');
+
+            const container = document.getElementById('petsContainer');
+            const alertBox = document.getElementById('alert');
+            const formCard = document.getElementById('petFormCard');
+            const toggleBtn = document.getElementById('toggleForm');
+
+            toggleBtn.addEventListener('click', () => {
+                formCard.style.display = formCard.style.display === 'none' ? 'block' : 'none';
+            });
+
+            function emojiFor(species) {
+                const s = (species || '').toLowerCase();
+                if (s.includes('dog') || s.includes('hund')) return '🐕';
+                if (s.includes('cat') || s.includes('katze')) return '🐈';
+                if (s.includes('bird') || s.includes('vogel')) return '🐦';
+                if (s.includes('rabbit') || s.includes('hase')) return '🐇';
+                if (s.includes('fish')) return '🐟';
+                return '🐾';
+            }
+
+            async function load() {
+                container.innerHTML = `<div class="empty"><div class="emoji">⏳</div><p>${I18n.t('loading')}</p></div>`;
+                try {
+                    const allPets = await Api.pets.list();
+                    const myPets = allPets.filter(p => p.owner && p.owner.id === Session.user.id);
+                    render(myPets);
+                } catch (err) {
+                    container.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            }
+
+            function render(pets) {
+                if (pets.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <div class="emoji">🐾</div>
+                            <h3 data-i18n="noPets">${I18n.t('noPets')}</h3>
+                            <p data-i18n="noPetsSub">${I18n.t('noPetsSub')}</p>
+                        </div>`;
+                    return;
+                }
+                container.innerHTML = `<div class="pet-grid">${pets.map(p => `
+                    <div class="card pet-card">
+                        <div class="pet-emoji">${emojiFor(p.species)}</div>
+                        <h3>${escapeHtml(p.name)}</h3>
+                        <div class="pet-meta">
+                            ${escapeHtml(p.species)}${p.breed ? ' · ' + escapeHtml(p.breed) : ''}
+                            ${p.age != null ? ' · ' + p.age + ' y' : ''}
+                        </div>
+                    </div>
+                `).join('')}</div>`;
+            }
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            document.getElementById('petForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                alertBox.innerHTML = '';
+                const age = document.getElementById('petAge').value;
+                const pet = {
+                    name: document.getElementById('petName').value,
+                    species: document.getElementById('petSpecies').value,
+                    breed: document.getElementById('petBreed').value || null,
+                    age: age ? parseInt(age, 10) : null,
+                    owner: { id: Session.user.id }
+                };
+                try {
+                    await Api.pets.create(pet);
+                    e.target.reset();
+                    formCard.style.display = 'none';
+                    load();
+                } catch (err) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${I18n.t('saveFailed')}${err.message}</div>`;
+                }
+            });
+
+            document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
+            load();
+        }
+    </script>
+</body>
+</html>

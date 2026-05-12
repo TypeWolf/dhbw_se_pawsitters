@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My calendar — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .cal-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .cal-toolbar h2 { margin: 0; }
+        .cal-nav { display: flex; gap: 8px; align-items: center; }
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .cal-dow {
+            background: var(--surface);
+            padding: 10px 8px;
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .cal-cell {
+            background: var(--surface);
+            min-height: 96px;
+            padding: 8px;
+            cursor: pointer;
+            transition: background 0.1s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .cal-cell:hover { background: #faf6f0; }
+        .cal-cell.other-month { background: #f8f6f1; color: var(--muted); }
+        .cal-cell.today .cal-day-num {
+            background: var(--accent); color: #fff;
+            border-radius: 999px; width: 26px; height: 26px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cal-day-num { font-weight: 600; font-size: 0.9rem; }
+        .cal-pill {
+            background: #fde9ea;
+            color: var(--accent);
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cal-pill.completed { background: #e2e8f5; color: #28467d; }
+        .cal-more { font-size: 0.72rem; color: var(--muted); }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            display: none; align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        .modal-backdrop.show { display: flex; }
+        .modal {
+            background: var(--surface); border-radius: var(--radius);
+            max-width: 480px; width: calc(100% - 32px);
+            max-height: 80vh; overflow-y: auto;
+            padding: 24px;
+            box-shadow: var(--shadow-hover);
+        }
+        .modal h3 { margin-bottom: 12px; }
+        .modal .booking { padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .modal .booking:last-child { border-bottom: none; }
+        .modal .booking h4 { margin: 0 0 4px 0; font-size: 1.05rem; }
+        .modal .booking-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin: 2px 0; }
+        .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--muted); float: right; }
+
+        @media (max-width: 600px) {
+            .cal-cell { min-height: 64px; padding: 4px; }
+            .cal-pill { font-size: 0.65rem; }
+        }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <div class="page-header">
+            <div>
+                <h1 data-i18n="calendarTitle">My sitter calendar</h1>
+                <p data-i18n="calendarSub">Everything you've taken on. Click a day to see what's booked.</p>
+            </div>
+        </div>
+
+        <div id="alert"></div>
+
+        <div class="card">
+            <div class="cal-toolbar">
+                <div class="cal-nav">
+                    <button class="btn btn-sm btn-secondary" id="prevBtn" data-i18n="prevMonth" title="Previous month">‹</button>
+                    <button class="btn btn-sm btn-ghost" id="todayBtn" data-i18n="today">Today</button>
+                    <button class="btn btn-sm btn-secondary" id="nextBtn" data-i18n="nextMonth" title="Next month">›</button>
+                </div>
+                <h2 id="monthLabel"></h2>
+                <div style="min-width: 80px"></div>
+            </div>
+
+            <div id="grid"></div>
+        </div>
+    </main>
+
+    <div class="modal-backdrop" id="modalBackdrop">
+        <div class="modal">
+            <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+            <h3 id="modalTitle"></h3>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (Session.requireAuth('SITTER')) {
+            Layout.init('calendar');
+
+            const HANDOVER_LABEL = {
+                SITTER_HOME: 'handoverSitterHome',
+                MEET_AT_PLACE: 'handoverMeet',
+                OWNER_HOME_PICKUP: 'handoverPickup'
+            };
+
+            const grid = document.getElementById('grid');
+            const monthLabel = document.getElementById('monthLabel');
+            const alertBox = document.getElementById('alert');
+            const modalBackdrop = document.getElementById('modalBackdrop');
+            const modalClose = document.getElementById('modalClose');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            let cursor = new Date();
+            cursor.setDate(1);
+            let bookings = [];
+
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            function sameDay(a, b) {
+                return a.getFullYear() === b.getFullYear()
+                    && a.getMonth() === b.getMonth()
+                    && a.getDate() === b.getDate();
+            }
+
+            function bookingsOnDay(day) {
+                return bookings.filter(b => {
+                    const s = new Date(b.startTime);
+                    const e = new Date(b.endTime);
+                    // Any overlap with the day window
+                    const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+                    return s <= dayEnd && e >= day;
+                });
+            }
+
+            function render() {
+                const lang = I18n.lang;
+                monthLabel.textContent = cursor.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
+
+                // Determine the first cell — Monday as week start (0 = Monday in our grid).
+                const firstOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+                const weekdayMon0 = (firstOfMonth.getDay() + 6) % 7; // shift Sun=0..Sat=6 → Mon=0..Sun=6
+                const gridStart = new Date(firstOfMonth);
+                gridStart.setDate(firstOfMonth.getDate() - weekdayMon0);
+
+                const today = new Date();
+                const dowLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const dowDe = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+                const dows = lang === 'de' ? dowDe : dowLabels;
+
+                let html = '<div class="cal-grid">';
+                dows.forEach(d => html += `<div class="cal-dow">${d}</div>`);
+
+                for (let i = 0; i < 42; i++) {
+                    const day = new Date(gridStart);
+                    day.setDate(gridStart.getDate() + i);
+                    const otherMonth = day.getMonth() !== cursor.getMonth();
+                    const isToday = sameDay(day, today);
+                    const dayBookings = bookingsOnDay(day);
+
+                    const pills = dayBookings.slice(0, 2).map(b => {
+                        const cls = b.status === 'COMPLETED' ? 'completed' : '';
+                        const label = (b.pet && b.pet.name) || 'Booking';
+                        return `<div class="cal-pill ${cls}" title="${escapeHtml(label)}">${escapeHtml(label)}</div>`;
+                    }).join('');
+                    const more = dayBookings.length > 2
+                        ? `<div class="cal-more">+${dayBookings.length - 2}</div>` : '';
+
+                    html += `
+                        <div class="cal-cell ${otherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}"
+                             data-date="${day.toISOString()}">
+                            <div class="cal-day-num">${day.getDate()}</div>
+                            ${pills}
+                            ${more}
+                        </div>`;
+                }
+                html += '</div>';
+                grid.innerHTML = html;
+
+                grid.querySelectorAll('.cal-cell').forEach(cell => {
+                    cell.addEventListener('click', () => openDay(new Date(cell.dataset.date)));
+                });
+            }
+
+            function openDay(day) {
+                const dayBookings = bookingsOnDay(day);
+                if (dayBookings.length === 0) return;
+
+                modalTitle.textContent = `${I18n.t('dayBookings')} ${day.toLocaleDateString(I18n.lang, {
+                    weekday: 'long', day: '2-digit', month: 'long'
+                })}`;
+
+                modalBody.innerHTML = dayBookings.map(b => {
+                    const s = new Date(b.startTime);
+                    const e = new Date(b.endTime);
+                    const time = `${s.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} – ${e.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+                    const owner = b.requester ? `${escapeHtml(b.requester.firstName)} ${escapeHtml(b.requester.lastName)}` : '—';
+                    const phone = b.requester && b.requester.phoneNumber ? escapeHtml(b.requester.phoneNumber) : null;
+                    const email = b.requester ? escapeHtml(b.requester.email) : null;
+                    const handover = b.handoverType ? I18n.t(HANDOVER_LABEL[b.handoverType]) : '—';
+                    const price = b.priceOffered != null ? `€${Number(b.priceOffered).toFixed(2)}` : '—';
+
+                    return `
+                        <div class="booking">
+                            <h4>${escapeHtml(b.pet ? b.pet.name : 'Pet')} <span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : 'badge-accepted'}">${I18n.t(b.status === 'COMPLETED' ? 'statusCompleted' : 'statusAccepted')}</span></h4>
+                            <div class="booking-row"><span>${I18n.t('whenLabel')}</span><span>${time}</span></div>
+                            <div class="booking-row"><span>${I18n.t('owner')}</span><span>${owner}</span></div>
+                            <div class="booking-row"><span>${I18n.t('handover')}</span><span>${handover}</span></div>
+                            ${b.handoverLocation ? `<div class="booking-row"><span>📍</span><span>${escapeHtml(b.handoverLocation)}</span></div>` : ''}
+                            ${b.handoverNotes ? `<div class="booking-row" style="font-style:italic;"><span></span><span>"${escapeHtml(b.handoverNotes)}"</span></div>` : ''}
+                            <div class="booking-row"><span>${I18n.t('priceLabel')}</span><span><strong>${price}</strong></span></div>
+                            ${(phone || email) ? `<div class="booking-row"><span>${I18n.t('contactOwner')}</span><span>${phone || email}</span></div>` : ''}
+                        </div>`;
+                }).join('');
+
+                modalBackdrop.classList.add('show');
+            }
+
+            modalClose.addEventListener('click', () => modalBackdrop.classList.remove('show'));
+            modalBackdrop.addEventListener('click', (e) => {
+                if (e.target === modalBackdrop) modalBackdrop.classList.remove('show');
+            });
+
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+                render();
+            });
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                render();
+            });
+            document.getElementById('todayBtn').addEventListener('click', () => {
+                cursor = new Date(); cursor.setDate(1);
+                render();
+            });
+
+            async function load() {
+                try {
+                    const all = await Api.requests.listBooked(Session.user.id);
+                    // ACCEPTED + COMPLETED (skip CANCELLED if any leak through)
+                    bookings = all.filter(b => b.status === 'ACCEPTED' || b.status === 'COMPLETED');
+                    render();
+                } catch (err) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            }
+
+            document.addEventListener('paws:lang', () => { I18n.apply(); render(); });
+            load();
+        }
+    </script>
+</body>
+</html>

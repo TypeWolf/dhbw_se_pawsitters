@@ -30,10 +30,29 @@ const Api = {
         create: (pet) => request('/pets', { method: 'POST', body: JSON.stringify(pet) })
     },
     requests: {
-        list: () => request('/requests'),
+        listOpen: () => request('/requests'),
+        listMine: (userId) => request(`/requests/mine?userId=${userId}`),
+        listBooked: (sitterId) => request(`/requests/booked?sitterId=${sitterId}`),
         create: (req) => request('/requests', { method: 'POST', body: JSON.stringify(req) }),
         accept: (id, sitterId) =>
             request(`/requests/${id}/accept?sitterId=${sitterId}`, { method: 'PUT' }),
+        cancel: (id, userId) =>
+            request(`/requests/${id}/cancel?userId=${userId}`, { method: 'PUT' }),
+        complete: (id, userId) =>
+            request(`/requests/${id}/complete?userId=${userId}`, { method: 'PUT' }),
         remove: (id) => request(`/requests/${id}`, { method: 'DELETE' })
+    },
+    wallet: {
+        me: (userId) => request(`/wallet/me?userId=${userId}`),
+        withdraw: (userId) => request(`/wallet/withdraw?userId=${userId}`, { method: 'POST' })
+    },
+    admin: {
+        users: (requesterId) => request(`/admin/users?requesterId=${requesterId}`),
+        pets: (requesterId) => request(`/admin/pets?requesterId=${requesterId}`),
+        requests: (requesterId) => request(`/admin/requests?requesterId=${requesterId}`),
+        payments: (requesterId) => request(`/admin/payments?requesterId=${requesterId}`),
+        setRoles: (requesterId, userId, roles) =>
+            request(`/admin/users/${userId}/roles?requesterId=${requesterId}`,
+                { method: 'PUT', body: JSON.stringify(roles) })
     }
 };

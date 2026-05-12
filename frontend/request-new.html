@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New sitter request — Pawsitters</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .request-wrap { max-width: 640px; margin: 0 auto; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        textarea { min-height: 80px; resize: vertical; font: inherit; }
+        @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <div class="request-wrap">
+            <div class="page-header" style="display:block;">
+                <h1 data-i18n="newRequest">Post a sitter request</h1>
+                <p data-i18n="newRequestSub">Tell us when, where, and what you'd like to pay.</p>
+            </div>
+
+            <div id="alert"></div>
+
+            <div id="noPetsWarning" class="card" style="display:none;">
+                <h3 data-i18n="noPets">You don't have any pets yet.</h3>
+                <p data-i18n="noPetsSub">Add your first pet to start booking sitters.</p>
+                <a class="btn" href="pets.html" data-i18n="addPet">Add a pet</a>
+            </div>
+
+            <form id="requestForm" class="card stack" style="display:none;">
+                <div class="field">
+                    <label data-i18n="pickPet">Which pet?</label>
+                    <select id="petId" required></select>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label data-i18n="startTime">Start</label>
+                        <input type="datetime-local" id="startTime" required>
+                    </div>
+                    <div class="field">
+                        <label data-i18n="endTime">End</label>
+                        <input type="datetime-local" id="endTime" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label data-i18n="handoverType">How will you hand the pet over?</label>
+                    <select id="handoverType" required>
+                        <option value="SITTER_HOME" data-i18n="handoverSitterHome">Drop off at the sitter's home</option>
+                        <option value="MEET_AT_PLACE" data-i18n="handoverMeet">Meet at a place</option>
+                        <option value="OWNER_HOME_PICKUP" data-i18n="handoverPickup">Sitter picks up at my home (premium)</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label data-i18n="handoverLocation">Address or meeting point</label>
+                    <input type="text" id="handoverLocation" required>
+                </div>
+
+                <div class="field">
+                    <label data-i18n="handoverNotes">Notes for the sitter (optional)</label>
+                    <textarea id="handoverNotes" maxlength="500"></textarea>
+                </div>
+
+                <div class="field">
+                    <label data-i18n="priceOffered">How much will you pay? (€)</label>
+                    <input type="number" id="priceOffered" min="0" step="0.50" required>
+                </div>
+
+                <div id="escrowNotice" class="alert alert-success" style="display:none;"></div>
+
+                <button type="submit" class="btn" data-i18n="postRequest">Post request</button>
+            </form>
+        </div>
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        if (Session.requireAuth('PET_OWNER')) {
+            Layout.init('requests');
+
+            const alertBox = document.getElementById('alert');
+            const form = document.getElementById('requestForm');
+            const noPetsWarning = document.getElementById('noPetsWarning');
+            const petSelect = document.getElementById('petId');
+
+            async function load() {
+                try {
+                    const allPets = await Api.pets.list();
+                    const myPets = allPets.filter(p => p.owner && p.owner.id === Session.user.id);
+                    if (myPets.length === 0) {
+                        noPetsWarning.style.display = 'block';
+                        form.style.display = 'none';
+                        return;
+                    }
+                    noPetsWarning.style.display = 'none';
+                    form.style.display = 'grid';
+                    petSelect.innerHTML = myPets.map(p =>
+                        `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.species)})</option>`
+                    ).join('');
+                } catch (err) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            }
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            const priceInput = document.getElementById('priceOffered');
+            const escrowNotice = document.getElementById('escrowNotice');
+            function updateEscrowNotice() {
+                const v = parseFloat(priceInput.value);
+                if (!isNaN(v) && v > 0) {
+                    escrowNotice.style.display = 'block';
+                    escrowNotice.textContent = I18n.t('fundsWillBeHeld').replace('%PRICE%', v.toFixed(2));
+                } else {
+                    escrowNotice.style.display = 'none';
+                }
+            }
+            priceInput.addEventListener('input', updateEscrowNotice);
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                alertBox.innerHTML = '';
+
+                const start = document.getElementById('startTime').value;
+                const end = document.getElementById('endTime').value;
+                if (new Date(start) >= new Date(end)) {
+                    alertBox.innerHTML = `<div class="alert alert-error">End must be after start.</div>`;
+                    return;
+                }
+
+                const payload = {
+                    pet: { id: parseInt(petSelect.value, 10) },
+                    requester: { id: Session.user.id },
+                    startTime: start,
+                    endTime: end,
+                    handoverType: document.getElementById('handoverType').value,
+                    handoverLocation: document.getElementById('handoverLocation').value,
+                    handoverNotes: document.getElementById('handoverNotes').value || null,
+                    priceOffered: parseFloat(document.getElementById('priceOffered').value)
+                };
+
+                try {
+                    await Api.requests.create(payload);
+                    window.location.href = 'my-requests.html';
+                } catch (err) {
+                    const msg = /insufficient/i.test(err.message)
+                        ? I18n.t('insufficientFunds')
+                        : I18n.t('saveFailed') + err.message;
+                    alertBox.innerHTML = `<div class="alert alert-error">${msg}</div>`;
+                }
+            });
+
+            document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
+            load();
+        }
+    </script>
+</body>
+</html>
