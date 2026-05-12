@@ -3,25 +3,20 @@ package com.dhbw.pawsitters.config;
 import com.dhbw.pawsitters.model.pet.Pet;
 import com.dhbw.pawsitters.model.sitting.SittingRequest;
 import com.dhbw.pawsitters.model.user.AppUser;
-import com.dhbw.pawsitters.repository.pet.PetRepository;
-import com.dhbw.pawsitters.repository.sitting.SittingRequestRepository;
-import com.dhbw.pawsitters.repository.user.AppUserRepository;
+import com.dhbw.pawsitters.service.UnitOfWork;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Configuration
 public class DataInitializer {
 
     @Bean
     public CommandLineRunner initData(
-            AppUserRepository userRepository,
-            PetRepository petRepository,
-            SittingRequestRepository requestRepository,
+            UnitOfWork unitOfWork,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // 1. Create Users
@@ -41,7 +36,8 @@ public class DataInitializer {
                     .phoneNumber("0987654321")
                     .build();
 
-            userRepository.saveAll(List.of(user1, user2));
+            unitOfWork.save(user1);
+            unitOfWork.save(user2);
 
             // 2. Create Pets
             Pet pet1 = Pet.builder()
@@ -68,7 +64,9 @@ public class DataInitializer {
                     .owner(user2)
                     .build();
 
-            petRepository.saveAll(List.of(pet1, pet2, pet3));
+            unitOfWork.save(pet1);
+            unitOfWork.save(pet2);
+            unitOfWork.save(pet3);
 
             // 3. Create Sitting Requests
             SittingRequest request1 = SittingRequest.builder()
@@ -87,9 +85,10 @@ public class DataInitializer {
                     .status(SittingRequest.RequestStatus.PENDING)
                     .build();
 
-            requestRepository.saveAll(List.of(request1, request2));
+            unitOfWork.save(request1);
+            unitOfWork.save(request2);
 
-            System.out.println("Data initialization complete: 2 Users, 3 Pets, 2 Requests created.");
+            System.out.println("Data initialization complete: 2 Users, 3 Pets, 2 Requests created using UnitOfWork.");
         };
     }
 }

@@ -1,7 +1,7 @@
 package com.dhbw.pawsitters.service.user;
 
 import com.dhbw.pawsitters.model.user.AppUser;
-import com.dhbw.pawsitters.repository.user.AppUserRepository;
+import com.dhbw.pawsitters.service.UnitOfWork;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,22 +12,25 @@ import java.util.List;
 public class AppUserService {
 
     @Autowired
-    private AppUserRepository userRepository;
+    private UnitOfWork unitOfWork;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     public AppUser register(AppUser user) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        // Check if email exists using generic getByProperty
+        boolean exists = !unitOfWork.getByProperty(AppUser.class, "email", user.getEmail()).isEmpty();
+        
+        if (exists) {
             throw new RuntimeException("Email already exists");
         }
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        return unitOfWork.save(user);
     }
 
     public AppUser login(String email, String password) {
-        AppUser user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        AppUser user = getUserByEmail(email);
         
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
@@ -35,12 +38,17 @@ public class AppUserService {
         return user;
     }
 
+    public AppUser getUserByEmail(String email) {
+        return unitOfWork.getByProperty(AppUser.class, "email", email).stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
     public List<AppUser> getAllUsers() {
-        return userRepository.findAll();
+        return unitOfWork.getAll(AppUser.class);
     }
 
     public AppUser getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return unitOfWork.getById(AppUser.class, id);
     }
 }

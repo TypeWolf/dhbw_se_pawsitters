@@ -1,8 +1,8 @@
 package com.dhbw.pawsitters.service.sitting;
 
 import com.dhbw.pawsitters.model.sitting.SittingRequest;
-import com.dhbw.pawsitters.repository.sitting.SittingRequestRepository;
 import com.dhbw.pawsitters.model.user.AppUser;
+import com.dhbw.pawsitters.service.UnitOfWork;
 import com.dhbw.pawsitters.service.user.AppUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,24 +14,23 @@ import java.util.List;
 public class SittingRequestService {
 
     @Autowired
-    private SittingRequestRepository requestRepository;
+    private UnitOfWork unitOfWork;
 
     @Autowired
     private AppUserService userService;
 
     public List<SittingRequest> getAllRequests() {
-        return requestRepository.findAll();
+        return unitOfWork.getAll(SittingRequest.class);
     }
 
     public SittingRequest createRequest(SittingRequest request) {
         request.setStatus(SittingRequest.RequestStatus.PENDING);
-        return requestRepository.save(request);
+        return unitOfWork.save(request);
     }
 
     @Transactional
     public SittingRequest acceptRequest(Long requestId, Long sitterId) {
-        SittingRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
+        SittingRequest request = unitOfWork.getById(SittingRequest.class, requestId);
         
         if (request.getRequester().getId().equals(sitterId)) {
             throw new RuntimeException("Owner cannot accept their own sitting request");
@@ -45,10 +44,10 @@ public class SittingRequestService {
 
         request.setSitter(sitter);
         request.setStatus(SittingRequest.RequestStatus.ACCEPTED);
-        return requestRepository.save(request);
+        return unitOfWork.save(request);
     }
 
     public void deleteRequest(Long id) {
-        requestRepository.deleteById(id);
+        unitOfWork.delete(SittingRequest.class, id);
     }
 }
