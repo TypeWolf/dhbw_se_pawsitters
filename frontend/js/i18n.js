@@ -56,6 +56,13 @@ const translations = {
         loginFailed: "Login failed: ",
         regSuccess: "Registration successful! Please sign in.",
         regFailed: "Registration failed: ",
+        pwdReqTitle: "Password must contain:",
+        pwdReqLength: "At least 12 characters",
+        pwdReqUpper: "At least one uppercase letter",
+        pwdReqLower: "At least one lowercase letter",
+        pwdReqNumber: "At least one number",
+        pwdReqSpecial: "At least one special character (!@#$%^&*)",
+        pwdInsecure: "Please choose a more secure password.",
 
         // Dashboard
         dashWelcome: "Welcome back",
@@ -267,6 +274,13 @@ const translations = {
         loginFailed: "Anmeldung fehlgeschlagen: ",
         regSuccess: "Registrierung erfolgreich! Bitte melde dich an.",
         regFailed: "Registrierung fehlgeschlagen: ",
+        pwdReqTitle: "Passwort muss enthalten:",
+        pwdReqLength: "Mindestens 12 Zeichen",
+        pwdReqUpper: "Mindestens ein Großbuchstabe",
+        pwdReqLower: "Mindestens ein Kleinbuchstabe",
+        pwdReqNumber: "Mindestens eine Zahl",
+        pwdReqSpecial: "Mindestens ein Sonderzeichen (!@#$%^&*)",
+        pwdInsecure: "Bitte wähle ein sichereres Passwort.",
 
         dashWelcome: "Willkommen zurück",
         dashSub: "Was möchtest du heute tun?",

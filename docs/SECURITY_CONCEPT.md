@@ -35,8 +35,9 @@ This document outlines the security measures and architectural decisions taken t
 - All communication between the frontend and backend should be encrypted via HTTPS in a production environment.
 
 ## 4. Input Validation
-- Basic validation is performed on the frontend (HTML5 required fields).
-- Backend services perform logical checks (e.g., checking for existing emails during registration).
+- **Frontend Validation:** The registration form includes live feedback for password security (12+ characters, uppercase, lowercase, numbers, and special characters). Submission is blocked if requirements are not met.
+- **Backend Validation:** Strict password validation is performed in the service layer.
+- **Error Handling:** A global exception handler maps validation and business logic failures to `400 Bad Request` responses with descriptive error messages, avoiding generic `500 Internal Server Error` responses.
 
 ---
 *Last Updated: 2026-05-08*

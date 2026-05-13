@@ -24,7 +24,7 @@ public class DataInitializer {
                     .firstName("Alice")
                     .lastName("Smith")
                     .email("alice@example.com")
-                    .password(passwordEncoder.encode("password123"))
+                    .password(passwordEncoder.encode("SecureP@ss123!"))
                     .phoneNumber("0123456789")
                     .build();
 
@@ -32,7 +32,7 @@ public class DataInitializer {
                     .firstName("Bob")
                     .lastName("Jones")
                     .email("bob@example.com")
-                    .password(passwordEncoder.encode("password123"))
+                    .password(passwordEncoder.encode("SecureP@ss123!"))
                     .phoneNumber("0987654321")
                     .build();
 
