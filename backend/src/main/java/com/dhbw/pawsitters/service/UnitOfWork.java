@@ -47,6 +47,11 @@ public class UnitOfWork {
         getRepository(entityClass).deleteById(id);
     }
 
+    public <T> void deleteAll(Class<T> entityClass) {
+        String jpql = String.format("DELETE FROM %s", entityClass.getSimpleName());
+        entityManager.createQuery(jpql).executeUpdate();
+    }
+
     public <T, V> List<T> getByProperty(Class<T> entityClass, String propertyName, V value) {
         String jpql = String.format("SELECT e FROM %s e WHERE e.%s = :value", entityClass.getSimpleName(), propertyName);
         return entityManager.createQuery(jpql, entityClass)
