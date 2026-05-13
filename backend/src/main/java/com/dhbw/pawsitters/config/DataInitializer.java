@@ -1,5 +1,6 @@
 package com.dhbw.pawsitters.config;
 
+import com.dhbw.pawsitters.model.pet.AgeCategory;
 import com.dhbw.pawsitters.model.pet.Pet;
 import com.dhbw.pawsitters.model.sitting.SittingRequest;
 import com.dhbw.pawsitters.model.user.AppUser;
@@ -39,12 +40,19 @@ public class DataInitializer {
             unitOfWork.save(user1);
             unitOfWork.save(user2);
 
-            // 2. Create Pets
+            // 2. Create Pets — full care profile to demo the new fields
             Pet pet1 = Pet.builder()
                     .name("Buddy")
                     .species("Dog")
                     .breed("Golden Retriever")
                     .age(3)
+                    .ageCategory(AgeCategory.YOUNG)
+                    .vaccinated(true)
+                    .houseTrained(true)
+                    .canGoOutside(true)
+                    .goodWithStrangers(true)
+                    .goodWithOtherAnimals(true)
+                    .careNotes("Loves morning walks. Two cups of kibble at 8am and 6pm.")
                     .owner(user1)
                     .build();
 
@@ -53,6 +61,13 @@ public class DataInitializer {
                     .species("Cat")
                     .breed("Persian")
                     .age(2)
+                    .ageCategory(AgeCategory.YOUNG)
+                    .vaccinated(true)
+                    .houseTrained(true)
+                    .canGoOutside(false)
+                    .goodWithStrangers(false)
+                    .allergies("Chicken — strict no")
+                    .careNotes("Hides under the bed when guests arrive. Pets only after 6pm.")
                     .owner(user1)
                     .build();
 
@@ -61,6 +76,15 @@ public class DataInitializer {
                     .species("Dog")
                     .breed("Bulldog")
                     .age(5)
+                    .ageCategory(AgeCategory.ADULT)
+                    .vaccinated(true)
+                    .houseTrained(true)
+                    .canGoOutside(true)
+                    .goodWithStrangers(true)
+                    .goodWithOtherAnimals(false)
+                    .aggressive(true)
+                    .aggressiveContext("Reactive on leash around big dogs — short walks only.")
+                    .medications("Apoquel 16mg with breakfast (allergies)")
                     .owner(user2)
                     .build();
 

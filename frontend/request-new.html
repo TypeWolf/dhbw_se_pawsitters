@@ -6,10 +6,10 @@
     <title>New sitter request — Pawsitters</title>
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        .request-wrap { max-width: 640px; margin: 0 auto; }
+        .request-wrap { max-width: 720px; margin: 0 auto; }
         .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        textarea { min-height: 80px; resize: vertical; font: inherit; }
         @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+        .form-card { padding: 32px; border-radius: var(--radius-lg); display: grid; gap: 18px; }
     </style>
 </head>
 <body>
@@ -17,7 +17,8 @@
 
     <main class="page container">
         <div class="request-wrap">
-            <div class="page-header" style="display:block;">
+            <div class="page-header" style="display:block; margin-bottom: 24px;">
+                <div class="crumb">New request</div>
                 <h1 data-i18n="newRequest">Post a sitter request</h1>
                 <p data-i18n="newRequestSub">Tell us when, where, and what you'd like to pay.</p>
             </div>
@@ -25,12 +26,15 @@
             <div id="alert"></div>
 
             <div id="noPetsWarning" class="card" style="display:none;">
-                <h3 data-i18n="noPets">You don't have any pets yet.</h3>
-                <p data-i18n="noPetsSub">Add your first pet to start booking sitters.</p>
-                <a class="btn" href="pets.html" data-i18n="addPet">Add a pet</a>
+                <h3 data-i18n="noPets" style="margin-bottom: 8px;">You don't have any pets yet.</h3>
+                <p data-i18n="noPetsSub" style="margin-bottom: 16px;">Add your first pet to start booking sitters.</p>
+                <a class="btn btn-sage" href="pets.html">
+                    <svg class="icon"><use href="#i-plus"></use></svg>
+                    <span data-i18n="addPet">Add a pet</span>
+                </a>
             </div>
 
-            <form id="requestForm" class="card stack" style="display:none;">
+            <form id="requestForm" class="card form-card" style="display:none;">
                 <div class="field">
                     <label data-i18n="pickPet">Which pet?</label>
                     <select id="petId" required></select>
@@ -49,11 +53,32 @@
 
                 <div class="field">
                     <label data-i18n="handoverType">How will you hand the pet over?</label>
-                    <select id="handoverType" required>
-                        <option value="SITTER_HOME" data-i18n="handoverSitterHome">Drop off at the sitter's home</option>
-                        <option value="MEET_AT_PLACE" data-i18n="handoverMeet">Meet at a place</option>
-                        <option value="OWNER_HOME_PICKUP" data-i18n="handoverPickup">Sitter picks up at my home (premium)</option>
-                    </select>
+                    <div class="radio-card-group" id="handoverGroup">
+                        <label class="radio-card">
+                            <input type="radio" name="handoverType" value="SITTER_HOME" checked>
+                            <div class="label">
+                                <svg class="icon"><use href="#i-door"></use></svg>
+                                <span data-i18n="handoverSitterHome">Drop off at the sitter's home</span>
+                            </div>
+                            <div class="desc">You bring the pet to them.</div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="handoverType" value="MEET_AT_PLACE">
+                            <div class="label">
+                                <svg class="icon"><use href="#i-pin"></use></svg>
+                                <span data-i18n="handoverMeet">Meet at a place</span>
+                            </div>
+                            <div class="desc">Park, café, anywhere in between.</div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="handoverType" value="OWNER_HOME_PICKUP">
+                            <div class="label">
+                                <svg class="icon"><use href="#i-house"></use></svg>
+                                <span data-i18n="handoverPickup">Sitter picks up at my home</span>
+                            </div>
+                            <div class="desc">Premium · sitter comes to you.</div>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="field">
@@ -73,7 +98,7 @@
 
                 <div id="escrowNotice" class="alert alert-success" style="display:none;"></div>
 
-                <button type="submit" class="btn" data-i18n="postRequest">Post request</button>
+                <button type="submit" class="btn btn-sage btn-lg" data-i18n="postRequest">Post request</button>
             </form>
         </div>
     </main>
@@ -93,9 +118,21 @@
             const noPetsWarning = document.getElementById('noPetsWarning');
             const petSelect = document.getElementById('petId');
 
+            // Loaded once on page mount so we can preview the wallet/card split.
+            let walletSnapshot = { ownerCredit: 0, sitterEarnings: 0, total: 0, card: null };
+
             async function load() {
                 try {
-                    const allPets = await Api.pets.list();
+                    const [allPets, wallet] = await Promise.all([
+                        Api.pets.list(),
+                        Api.wallet.me(Session.user.id)
+                    ]);
+                    walletSnapshot = {
+                        ownerCredit:    Number(wallet.ownerCredit    || 0),
+                        sitterEarnings: Number(wallet.sitterEarnings || 0),
+                        total:          Number(wallet.total          || 0),
+                        card:           wallet.card || null
+                    };
                     const myPets = allPets.filter(p => p.owner && p.owner.id === Session.user.id);
                     if (myPets.length === 0) {
                         noPetsWarning.style.display = 'block';
@@ -107,6 +144,7 @@
                     petSelect.innerHTML = myPets.map(p =>
                         `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.species)})</option>`
                     ).join('');
+                    updateEscrowNotice();
                 } catch (err) {
                     alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
                 }
@@ -122,12 +160,39 @@
             const escrowNotice = document.getElementById('escrowNotice');
             function updateEscrowNotice() {
                 const v = parseFloat(priceInput.value);
-                if (!isNaN(v) && v > 0) {
-                    escrowNotice.style.display = 'block';
-                    escrowNotice.textContent = I18n.t('fundsWillBeHeld').replace('%PRICE%', v.toFixed(2));
-                } else {
+                if (isNaN(v) || v <= 0) {
                     escrowNotice.style.display = 'none';
+                    return;
                 }
+                const walletPart = Math.min(v, walletSnapshot.total);
+                const cardPart   = Math.max(0, v - walletSnapshot.total);
+                const card = walletSnapshot.card;
+
+                escrowNotice.classList.remove('alert-error', 'alert-info', 'alert-success');
+                let message;
+                if (cardPart === 0) {
+                    escrowNotice.classList.add('alert-success');
+                    message = I18n.t('escrowSplitWallet').replace('%AMOUNT%', v.toFixed(2));
+                } else if (card) {
+                    escrowNotice.classList.add('alert-info');
+                    if (walletPart > 0) {
+                        message = I18n.t('escrowSplitMixed')
+                            .replace('%WALLET%', walletPart.toFixed(2))
+                            .replace('%CARD%',   cardPart.toFixed(2))
+                            .replace('%LAST4%',  card.last4 || '••••');
+                    } else {
+                        message = I18n.t('escrowSplitCardOnly')
+                            .replace('%CARD%',  cardPart.toFixed(2))
+                            .replace('%LAST4%', card.last4 || '••••');
+                    }
+                } else {
+                    escrowNotice.classList.add('alert-error');
+                    message = I18n.t('noCardAndShort').replace('%AMOUNT%', cardPart.toFixed(2))
+                        + ' <a href="wallet.html" style="color:inherit;text-decoration:underline;">'
+                        + I18n.t('addCardCta') + '</a>';
+                }
+                escrowNotice.style.display = 'block';
+                escrowNotice.innerHTML = message;
             }
             priceInput.addEventListener('input', updateEscrowNotice);
 
@@ -142,12 +207,13 @@
                     return;
                 }
 
+                const handoverType = document.querySelector('input[name="handoverType"]:checked').value;
                 const payload = {
                     pet: { id: parseInt(petSelect.value, 10) },
                     requester: { id: Session.user.id },
                     startTime: start,
                     endTime: end,
-                    handoverType: document.getElementById('handoverType').value,
+                    handoverType: handoverType,
                     handoverLocation: document.getElementById('handoverLocation').value,
                     handoverNotes: document.getElementById('handoverNotes').value || null,
                     priceOffered: parseFloat(document.getElementById('priceOffered').value)

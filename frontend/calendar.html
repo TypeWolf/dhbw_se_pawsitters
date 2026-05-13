@@ -10,12 +10,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
             gap: 12px;
             flex-wrap: wrap;
         }
-        .cal-toolbar h2 { margin: 0; }
-        .cal-nav { display: flex; gap: 8px; align-items: center; }
+        .cal-toolbar h2 {
+            margin: 0;
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+        }
+        .cal-nav { display: flex; gap: 6px; align-items: center; }
+        .cal-nav .btn { padding: 0 12px; }
         .cal-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -26,17 +32,16 @@
             overflow: hidden;
         }
         .cal-dow {
-            background: var(--surface);
+            background: var(--card);
             padding: 10px 8px;
             text-align: center;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--muted);
+            font: 500 0.7rem var(--font-mono);
+            color: var(--ink-mute);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
         }
         .cal-cell {
-            background: var(--surface);
+            background: var(--card);
             min-height: 96px;
             padding: 8px;
             cursor: pointer;
@@ -45,48 +50,54 @@
             flex-direction: column;
             gap: 4px;
         }
-        .cal-cell:hover { background: #faf6f0; }
-        .cal-cell.other-month { background: #f8f6f1; color: var(--muted); }
+        .cal-cell:hover { background: var(--sage-tint); }
+        .cal-cell.other-month { background: var(--surface); color: var(--ink-mute); }
         .cal-cell.today .cal-day-num {
-            background: var(--accent); color: #fff;
+            background: var(--sage); color: #fff;
             border-radius: 999px; width: 26px; height: 26px;
             display: flex; align-items: center; justify-content: center;
         }
-        .cal-day-num { font-weight: 600; font-size: 0.9rem; }
+        .cal-day-num {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            font-size: 0.82rem;
+            color: var(--ink-soft);
+        }
         .cal-pill {
-            background: #fde9ea;
-            color: var(--accent);
+            background: var(--sage-tint);
+            color: var(--sage-dark);
             border-radius: 6px;
             padding: 2px 6px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .cal-pill.completed { background: #e2e8f5; color: #28467d; }
-        .cal-more { font-size: 0.72rem; color: var(--muted); }
+        .cal-pill.completed { background: var(--ink); color: #fff; }
+        .cal-more { font-size: 0.7rem; color: var(--ink-mute); }
 
         /* Modal */
         .modal-backdrop {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            position: fixed; inset: 0; background: rgba(31,27,22,0.5);
+            backdrop-filter: blur(2px);
             display: none; align-items: center; justify-content: center;
             z-index: 100;
         }
         .modal-backdrop.show { display: flex; }
         .modal {
-            background: var(--surface); border-radius: var(--radius);
+            background: var(--card); border-radius: var(--radius-lg);
             max-width: 480px; width: calc(100% - 32px);
             max-height: 80vh; overflow-y: auto;
-            padding: 24px;
+            padding: 28px;
             box-shadow: var(--shadow-hover);
         }
-        .modal h3 { margin-bottom: 12px; }
+        .modal h3 { margin-bottom: 12px; font-family: var(--font-serif); }
         .modal .booking { padding: 12px 0; border-bottom: 1px solid var(--border); }
         .modal .booking:last-child { border-bottom: none; }
-        .modal .booking h4 { margin: 0 0 4px 0; font-size: 1.05rem; }
-        .modal .booking-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--muted); margin: 2px 0; }
-        .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--muted); float: right; }
+        .modal .booking h4 { margin: 0 0 4px 0; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 500; }
+        .modal .booking-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--ink-soft); margin: 2px 0; }
+        .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--ink-mute); float: right; }
 
         @media (max-width: 600px) {
             .cal-cell { min-height: 64px; padding: 4px; }
@@ -110,9 +121,9 @@
         <div class="card">
             <div class="cal-toolbar">
                 <div class="cal-nav">
-                    <button class="btn btn-sm btn-secondary" id="prevBtn" data-i18n="prevMonth" title="Previous month">‹</button>
+                    <button class="btn btn-sm btn-soft" id="prevBtn" data-i18n="prevMonth" title="Previous month">‹</button>
                     <button class="btn btn-sm btn-ghost" id="todayBtn" data-i18n="today">Today</button>
-                    <button class="btn btn-sm btn-secondary" id="nextBtn" data-i18n="nextMonth" title="Next month">›</button>
+                    <button class="btn btn-sm btn-soft" id="nextBtn" data-i18n="nextMonth" title="Next month">›</button>
                 </div>
                 <h2 id="monthLabel"></h2>
                 <div style="min-width: 80px"></div>
@@ -246,10 +257,37 @@
                     const email = b.requester ? escapeHtml(b.requester.email) : null;
                     const handover = b.handoverType ? I18n.t(HANDOVER_LABEL[b.handoverType]) : '—';
                     const price = b.priceOffered != null ? `€${Number(b.priceOffered).toFixed(2)}` : '—';
+                    const pet = b.pet || {};
+
+                    // Care details block — only show the rows that have data.
+                    const careRows = [];
+                    if (pet.ageCategory) {
+                        const ageKey = 'ageCategory' + pet.ageCategory.charAt(0) + pet.ageCategory.slice(1).toLowerCase();
+                        careRows.push({ label: I18n.t('petAge'), value: I18n.t(ageKey) });
+                    }
+                    if (pet.allergies)   careRows.push({ label: I18n.t('labelAllergies'),   value: escapeHtml(pet.allergies) });
+                    if (pet.medications) careRows.push({ label: I18n.t('labelMedications'), value: escapeHtml(pet.medications) });
+                    if (pet.aggressive && pet.aggressiveContext) {
+                        careRows.push({ label: I18n.t('traitAggressive'), value: escapeHtml(pet.aggressiveContext) });
+                    }
+                    if (pet.careNotes)   careRows.push({ label: I18n.t('labelCareNotes'),   value: escapeHtml(pet.careNotes) });
+
+                    const traitPills = [];
+                    if (pet.vaccinated)          traitPills.push({ key: 'traitVaccinated',          tone: 'sage' });
+                    if (pet.houseTrained)        traitPills.push({ key: 'traitHouseTrained',        tone: 'sage' });
+                    if (pet.canGoOutside)        traitPills.push({ key: 'traitCanGoOutside',        tone: 'peach' });
+                    if (pet.goodWithStrangers)   traitPills.push({ key: 'traitGoodWithStrangers',   tone: 'peach' });
+                    if (pet.goodWithOtherAnimals)traitPills.push({ key: 'traitGoodWithOtherAnimals',tone: 'sage' });
+                    if (pet.aggressive)          traitPills.push({ key: 'traitAggressive',          tone: 'danger' });
+                    const pillRow = traitPills.length
+                        ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+                              ${traitPills.map(p => `<span class="pill pill-${p.tone}" style="font-size:0.72rem;padding:3px 9px;">${I18n.t(p.key)}</span>`).join('')}
+                           </div>`
+                        : '';
 
                     return `
                         <div class="booking">
-                            <h4>${escapeHtml(b.pet ? b.pet.name : 'Pet')} <span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : 'badge-accepted'}">${I18n.t(b.status === 'COMPLETED' ? 'statusCompleted' : 'statusAccepted')}</span></h4>
+                            <h4>${escapeHtml(pet.name || 'Pet')} <span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : 'badge-accepted'}">${I18n.t(b.status === 'COMPLETED' ? 'statusCompleted' : 'statusAccepted')}</span></h4>
                             <div class="booking-row"><span>${I18n.t('whenLabel')}</span><span>${time}</span></div>
                             <div class="booking-row"><span>${I18n.t('owner')}</span><span>${owner}</span></div>
                             <div class="booking-row"><span>${I18n.t('handover')}</span><span>${handover}</span></div>
@@ -257,6 +295,8 @@
                             ${b.handoverNotes ? `<div class="booking-row" style="font-style:italic;"><span></span><span>"${escapeHtml(b.handoverNotes)}"</span></div>` : ''}
                             <div class="booking-row"><span>${I18n.t('priceLabel')}</span><span><strong>${price}</strong></span></div>
                             ${(phone || email) ? `<div class="booking-row"><span>${I18n.t('contactOwner')}</span><span>${phone || email}</span></div>` : ''}
+                            ${pillRow}
+                            ${careRows.map(r => `<div class="booking-row" style="align-items:flex-start;"><span>${r.label}</span><span style="text-align:right;max-width:60%;">${r.value}</span></div>`).join('')}
                         </div>`;
                 }).join('');
 

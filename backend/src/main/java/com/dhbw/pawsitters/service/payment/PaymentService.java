@@ -35,6 +35,7 @@ public class PaymentService {
                 .amount(amount)
                 .fromOwnerCredit(split.fromOwnerCredit())
                 .fromSitterEarnings(split.fromSitterEarnings())
+                .fromCard(split.fromCard())
                 .status(Payment.Status.HELD)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -65,10 +66,30 @@ public class PaymentService {
         if (p.getStatus() != Payment.Status.HELD) {
             throw new RuntimeException("Payment is not HELD");
         }
+        // Restore the wallet portions back to the user's balances.
         walletService.creditRefund(p.getPayerId(), p.getFromOwnerCredit(), p.getFromSitterEarnings());
         p.setStatus(Payment.Status.REFUNDED);
         p.setResolvedAt(LocalDateTime.now());
-        return unitOfWork.save(p);
+        unitOfWork.save(p);
+
+        // If part of the hold was charged to the card, log a separate refund-to-card row.
+        // The wallet does NOT get this amount back (matches how real Stripe refunds behave).
+        BigDecimal cardPortion = p.getFromCard();
+        if (cardPortion != null && cardPortion.signum() > 0) {
+            LocalDateTime now = LocalDateTime.now();
+            Payment cardRefund = Payment.builder()
+                    .sittingRequestId(p.getSittingRequestId())
+                    .payerId(p.getPayerId())
+                    .amount(cardPortion)
+                    .fromCard(cardPortion)
+                    .status(Payment.Status.REFUNDED_TO_CARD)
+                    .createdAt(now)
+                    .resolvedAt(now)
+                    .build();
+            unitOfWork.save(cardRefund);
+        }
+
+        return p;
     }
 
     @Transactional

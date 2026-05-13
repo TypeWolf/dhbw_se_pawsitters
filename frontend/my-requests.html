@@ -7,14 +7,34 @@
     <link rel="stylesheet" href="css/styles.css">
     <style>
         .req-grid { display: grid; gap: 16px; }
-        .req-card { display: grid; gap: 8px; }
+        .req-card { padding: 22px; display: grid; grid-template-columns: 88px 1fr; gap: 18px; }
+        .req-card .left { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .req-card .right { display: grid; gap: 10px; min-width: 0; }
         .req-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-        .req-head h3 { margin: 0; }
-        .req-meta { color: var(--muted); font-size: 0.9rem; }
-        .req-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.95rem; }
+        .req-head h3 { margin: 0; font-size: 1.2rem; }
+        .req-meta { color: var(--ink-soft); font-size: 0.9rem; }
+        .req-row { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.9rem; color: var(--ink-soft); }
         .req-row > div { flex: 1; min-width: 140px; }
-        .req-row strong { display: block; font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-        .req-actions { margin-top: 8px; }
+        .req-row strong {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--ink-mute);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 2px;
+        }
+        .req-notes {
+            font-style: italic;
+            color: var(--ink-mute);
+            padding-left: 12px;
+            border-left: 2px solid var(--border-strong);
+        }
+        .req-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+        @media (max-width: 540px) {
+            .req-card { grid-template-columns: 64px 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -23,10 +43,14 @@
     <main class="page container">
         <div class="page-header">
             <div>
+                <div class="crumb">Requests</div>
                 <h1 data-i18n="myRequestsTitle">My requests</h1>
                 <p data-i18n="myRequestsSub">Track the status of the sitters you've booked.</p>
             </div>
-            <a class="btn" href="request-new.html" data-i18n="newRequest">Post a sitter request</a>
+            <a class="btn btn-sage" href="request-new.html">
+                <svg class="icon"><use href="#i-plus"></use></svg>
+                <span data-i18n="newRequest">Post a sitter request</span>
+            </a>
         </div>
 
         <div id="alert"></div>
@@ -38,6 +62,7 @@
     <script src="js/i18n.js"></script>
     <script src="js/session.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/species.js"></script>
     <script src="js/layout.js"></script>
     <script>
         if (Session.requireAuth()) {
@@ -85,7 +110,7 @@
             }
 
             async function load() {
-                container.innerHTML = `<div class="empty"><div class="emoji">⏳</div><p>${I18n.t('loading')}</p></div>`;
+                container.innerHTML = `<div class="empty"><span class="empty-icon"><svg class="icon"><use href="#i-clock"></use></svg></span><p>${I18n.t('loading')}</p></div>`;
                 try {
                     const requests = await Api.requests.listMine(Session.user.id);
                     requests.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
@@ -99,10 +124,10 @@
                 if (requests.length === 0) {
                     container.innerHTML = `
                         <div class="empty">
-                            <div class="emoji">📭</div>
+                            <span class="empty-icon"><svg class="icon"><use href="#i-msg"></use></svg></span>
                             <h3>${I18n.t('noRequests')}</h3>
                             <p>${I18n.t('noRequestsSub')}</p>
-                            <a class="btn" href="request-new.html" style="margin-top:16px;">${I18n.t('newRequest')}</a>
+                            <a class="btn btn-sage" href="request-new.html">${I18n.t('newRequest')}</a>
                         </div>`;
                     return;
                 }
@@ -117,36 +142,45 @@
                     const canCancel = status === 'PENDING';
                     const canComplete = status === 'ACCEPTED';
                     const sitterName = r.sitter ? `${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}` : '';
+                    const species = r.pet ? r.pet.species : '';
                     return `
                         <div class="card req-card">
-                            <div class="req-head">
-                                <div>
-                                    <h3>${escapeHtml(r.pet ? r.pet.name : 'Pet')}</h3>
-                                    <div class="req-meta">${formatRange(r.startTime, r.endTime)}</div>
-                                </div>
-                                <span class="badge ${badgeCls}">${I18n.t(statusKey)}</span>
+                            <div class="left">
+                                ${renderSpeciesTile(species, 'lg')}
                             </div>
-                            <div class="req-row">
-                                <div>
-                                    <strong>${I18n.t('handover')}</strong>
-                                    ${handover}${r.handoverLocation ? ' — ' + escapeHtml(r.handoverLocation) : ''}
+                            <div class="right">
+                                <div class="req-head">
+                                    <div>
+                                        <h3>${escapeHtml(r.pet ? r.pet.name : 'Pet')}</h3>
+                                        <div class="req-meta">${formatRange(r.startTime, r.endTime)}</div>
+                                    </div>
+                                    <span class="badge ${badgeCls}">${I18n.t(statusKey)}</span>
                                 </div>
-                                <div>
-                                    <strong>${I18n.t('pricePerJob')}</strong>
-                                    ${price}
+                                <div class="req-row">
+                                    <div>
+                                        <strong>${I18n.t('handover')}</strong>
+                                        ${handover}${r.handoverLocation ? ' — ' + escapeHtml(r.handoverLocation) : ''}
+                                    </div>
+                                    <div>
+                                        <strong>${I18n.t('pricePerJob')}</strong>
+                                        ${price}
+                                    </div>
+                                    <div>
+                                        <strong>${I18n.t('sitter')}</strong>
+                                        ${sitter}
+                                    </div>
                                 </div>
-                                <div>
-                                    <strong>${I18n.t('sitter')}</strong>
-                                    ${sitter}
-                                </div>
-                            </div>
-                            ${r.handoverNotes ? `<div class="req-meta">"${escapeHtml(r.handoverNotes)}"</div>` : ''}
-                            ${canCancel ? `<div class="req-actions"><button class="btn btn-sm btn-secondary" data-cancel="${r.id}">${I18n.t('cancelRequest')}</button></div>` : ''}
-                            ${canComplete ? `
-                                <div class="req-actions" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                                    <button class="btn btn-sm" data-complete="${r.id}" data-price="${r.priceOffered || 0}" data-sitter="${sitterName}">${I18n.t('confirmComplete')}</button>
-                                    <span class="req-meta">${I18n.t('confirmCompleteHint')}</span>
+                                ${r.handoverNotes ? `<div class="req-notes">"${escapeHtml(r.handoverNotes)}"</div>` : ''}
+                                ${(canCancel || canComplete) ? `<div class="req-actions">
+                                    ${canCancel ? `<button class="btn btn-sm btn-ghost" data-cancel="${r.id}">${I18n.t('cancelRequest')}</button>` : ''}
+                                    ${canComplete ? `
+                                        <button class="btn btn-sm btn-sage" data-complete="${r.id}" data-price="${r.priceOffered || 0}" data-sitter="${sitterName}">
+                                            <svg class="icon"><use href="#i-check"></use></svg>
+                                            <span>${I18n.t('confirmComplete')}</span>
+                                        </button>
+                                        <span class="req-meta">${I18n.t('confirmCompleteHint')}</span>` : ''}
                                 </div>` : ''}
+                            </div>
                         </div>`;
                 }).join('')}</div>`;
 
