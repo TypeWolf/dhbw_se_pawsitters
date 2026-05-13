@@ -130,6 +130,36 @@
         </div>
     </div>
 
+    <!-- Rating Modal -->
+    <div id="rating-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="rating-modal-title" data-i18n="rateOwner">Rate the owner</h3>
+                <button class="close-modal" id="close-rating">&times;</button>
+            </div>
+            <p data-i18n="recommendedRating" style="margin-bottom: 24px;">How was your experience? Rating helps the community.</p>
+            <form id="rating-form" class="stack">
+                <input type="hidden" id="rating-request-id">
+                <div class="field">
+                    <label data-i18n="stars">Stars</label>
+                    <div class="star-rating-input" id="star-input-container">
+                        <span data-value="1">★</span>
+                        <span data-value="2">★</span>
+                        <span data-value="3">★</span>
+                        <span data-value="4">★</span>
+                        <span data-value="5">★</span>
+                    </div>
+                    <input type="hidden" id="rating-stars" value="5" required>
+                </div>
+                <div class="field">
+                    <label data-i18n="comment">Comment</label>
+                    <textarea id="rating-comment" style="min-height: 100px;" data-i18n="comment"></textarea>
+                </div>
+                <button type="submit" class="btn btn-block" data-i18n="submitRating">Submit rating</button>
+            </form>
+        </div>
+    </div>
+
     <footer id="site-footer" class="site-footer"></footer>
 
     <script src="js/i18n.js"></script>
@@ -178,6 +208,20 @@
                     const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
                     return s <= dayEnd && e >= day;
                 });
+            }
+
+            function renderStars(avg) {
+                if (!avg || avg <= 0) return '';
+                const full = Math.floor(avg);
+                const half = avg % 1 >= 0.5 ? 1 : 0;
+                const empty = 5 - full - half;
+                return `
+                    <div class="star-rating-display" style="margin-top:4px;">
+                        <div class="stars">
+                            ${'★'.repeat(full)}${half ? '½' : ''}${'☆'.repeat(empty)}
+                        </div>
+                        <span class="rating-val">${avg.toFixed(1)}</span>
+                    </div>`;
             }
 
             function render() {
@@ -241,27 +285,99 @@
                     const s = new Date(b.startTime);
                     const e = new Date(b.endTime);
                     const time = `${s.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} – ${e.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
-                    const owner = b.requester ? `${escapeHtml(b.requester.firstName)} ${escapeHtml(b.requester.lastName)}` : '—';
+                    
+                    const ratingHtml = renderStars(b.requester ? b.requester.averageRating : 0);
+                    const owner = b.requester ? `
+                        <div>
+                            ${escapeHtml(b.requester.firstName)} ${escapeHtml(b.requester.lastName)}
+                            ${ratingHtml}
+                        </div>` : '—';
+                    const ownerName = b.requester ? `${escapeHtml(b.requester.firstName)} ${escapeHtml(b.requester.lastName)}` : '';
+                    
                     const phone = b.requester && b.requester.phoneNumber ? escapeHtml(b.requester.phoneNumber) : null;
                     const email = b.requester ? escapeHtml(b.requester.email) : null;
                     const handover = b.handoverType ? I18n.t(HANDOVER_LABEL[b.handoverType]) : '—';
                     const price = b.priceOffered != null ? `€${Number(b.priceOffered).toFixed(2)}` : '—';
 
+                    const canRate = b.status === 'COMPLETED';
+
                     return `
                         <div class="booking">
                             <h4>${escapeHtml(b.pet ? b.pet.name : 'Pet')} <span class="badge ${b.status === 'COMPLETED' ? 'badge-completed' : 'badge-accepted'}">${I18n.t(b.status === 'COMPLETED' ? 'statusCompleted' : 'statusAccepted')}</span></h4>
                             <div class="booking-row"><span>${I18n.t('whenLabel')}</span><span>${time}</span></div>
-                            <div class="booking-row"><span>${I18n.t('owner')}</span><span>${owner}</span></div>
+                            <div class="booking-row"><span>${I18n.t('owner')}</span>${owner}</div>
                             <div class="booking-row"><span>${I18n.t('handover')}</span><span>${handover}</span></div>
                             ${b.handoverLocation ? `<div class="booking-row"><span>📍</span><span>${escapeHtml(b.handoverLocation)}</span></div>` : ''}
                             ${b.handoverNotes ? `<div class="booking-row" style="font-style:italic;"><span></span><span>"${escapeHtml(b.handoverNotes)}"</span></div>` : ''}
                             <div class="booking-row"><span>${I18n.t('priceLabel')}</span><span><strong>${price}</strong></span></div>
                             ${(phone || email) ? `<div class="booking-row"><span>${I18n.t('contactOwner')}</span><span>${phone || email}</span></div>` : ''}
+                            ${canRate ? `<div style="margin-top:12px;"><button class="btn btn-sm btn-secondary" data-rate="${b.id}" data-owner="${ownerName}">${I18n.t('rateOwner')}</button></div>` : ''}
                         </div>`;
                 }).join('');
 
                 modalBackdrop.classList.add('show');
+
+                modalBody.querySelectorAll('[data-rate]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        modalBackdrop.classList.remove('show');
+                        openRatingModal(btn.dataset.rate, btn.dataset.owner);
+                    });
+                });
             }
+
+            // Rating Modal Logic
+            const ratingModal = document.getElementById('rating-modal');
+            const ratingForm = document.getElementById('rating-form');
+            const starsInput = document.getElementById('rating-stars');
+            const starSpans = document.querySelectorAll('.star-rating-input span');
+
+            function openRatingModal(requestId, ownerName) {
+                document.getElementById('rating-request-id').value = requestId;
+                document.getElementById('rating-modal-title').textContent = 
+                    I18n.t('rateOwner') + (ownerName ? `: ${ownerName}` : '');
+                resetRatingForm();
+                ratingModal.style.display = 'flex';
+            }
+
+            function resetRatingForm() {
+                ratingForm.reset();
+                updateStars(5);
+            }
+
+            function updateStars(val) {
+                starsInput.value = val;
+                starSpans.forEach(s => {
+                    const sVal = parseInt(s.dataset.value);
+                    if (sVal <= val) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            }
+
+            starSpans.forEach(s => {
+                s.addEventListener('click', () => updateStars(parseInt(s.dataset.value)));
+            });
+
+            document.getElementById('close-rating').onclick = () => ratingModal.style.display = 'none';
+            window.onclick = (e) => { if (e.target === ratingModal) ratingModal.style.display = 'none'; };
+
+            ratingForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const requestId = document.getElementById('rating-request-id').value;
+                const stars = starsInput.value;
+                const comment = document.getElementById('rating-comment').value;
+                
+                try {
+                    await Api.ratings.create(requestId, stars, comment, Session.user.id);
+                    ratingModal.style.display = 'none';
+                    alertBox.innerHTML = `<div class="alert alert-success">${I18n.t('ratingSuccess')}</div>`;
+                    load();
+                } catch (err) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            };
 
             modalClose.addEventListener('click', () => modalBackdrop.classList.remove('show'));
             modalBackdrop.addEventListener('click', (e) => {

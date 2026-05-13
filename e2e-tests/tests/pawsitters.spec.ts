@@ -146,4 +146,41 @@ test.describe('Pawsitters E2E Tests', () => {
     await expect(page).toHaveURL(new RegExp(`${BASE_URL}/(index(\\.html)?)?$`));
     await expect(page.locator('nav')).toContainText('Log in');
   });
+
+  test('should rate a sitter after completing a request', async ({ page }) => {
+    // 1. Login as Alice (owner)
+    await page.goto(`${BASE_URL}/login.html`);
+    await page.fill('#email', 'alice@example.com');
+    await page.fill('#password', 'SecureP@ss123!');
+    await page.click('button[type="submit"]');
+
+    // 2. Navigate to My Requests
+    await page.click('nav a[href="my-requests.html"]');
+
+    // 3. Find an ACCEPTED request to complete, or use the already completed one for rating
+    // In our DataInitializer, we have a COMPLETED request for Bob.
+    // Let's try to find a "Rate your sitter" button.
+    const rateButton = page.locator('button[data-rate]').first();
+    
+    // If no completed request exists yet, we might need to complete one, 
+    // but DataInitializer provides one.
+    await expect(rateButton).toBeVisible();
+    await rateButton.click();
+
+    // 4. Fill the rating modal
+    await expect(page.locator('#rating-modal')).toBeVisible();
+    
+    // Click on the 4th star (value 4)
+    await page.click('.star-rating-input span[data-value="4"]');
+    await page.fill('#rating-comment', 'Bob was great, but 5 mins late.');
+    
+    await page.click('#rating-form button[type="submit"]');
+
+    // 5. Verify success message
+    await expect(page.locator('.alert-success')).toBeVisible();
+    
+    // 6. Verify rating is displayed (optional, depends on how quickly average updates)
+    // The average rating should now be visible in the request card
+    await expect(page.locator('.star-rating-display')).toBeVisible();
+  });
 });

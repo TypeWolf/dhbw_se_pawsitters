@@ -19,6 +19,9 @@ public class AppUserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.dhbw.pawsitters.service.rating.RatingService ratingService;
+
     public AppUser register(AppUser user) {
         validatePassword(user.getPassword());
 
@@ -68,24 +71,31 @@ public class AppUserService {
         if (unitOfWork.count(AppUser.class) == 1 && user.getId() == 1L) {
              if (!user.getRoles().contains(Role.ADMIN)) {
                  user.getRoles().add(Role.ADMIN);
-                 return unitOfWork.save(user);
+                 user = unitOfWork.save(user);
              }
         }
 
+        ratingService.populateAverageRating(user);
         return user;
     }
 
     public AppUser getUserByEmail(String email) {
-        return unitOfWork.getByProperty(AppUser.class, "email", email).stream()
+        AppUser user = unitOfWork.getByProperty(AppUser.class, "email", email).stream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        ratingService.populateAverageRating(user);
+        return user;
     }
 
     public List<AppUser> getAllUsers() {
-        return unitOfWork.getAll(AppUser.class);
+        List<AppUser> users = unitOfWork.getAll(AppUser.class);
+        users.forEach(ratingService::populateAverageRating);
+        return users;
     }
 
     public AppUser getUserById(Long id) {
-        return unitOfWork.getById(AppUser.class, id);
+        AppUser user = unitOfWork.getById(AppUser.class, id);
+        ratingService.populateAverageRating(user);
+        return user;
     }
 }

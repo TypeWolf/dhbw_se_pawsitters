@@ -1,6 +1,7 @@
 package com.dhbw.pawsitters.config;
 
 import com.dhbw.pawsitters.model.pet.Pet;
+import com.dhbw.pawsitters.model.rating.Rating;
 import com.dhbw.pawsitters.model.sitting.SittingRequest;
 import com.dhbw.pawsitters.model.user.AppUser;
 import com.dhbw.pawsitters.service.UnitOfWork;
@@ -88,7 +89,28 @@ public class DataInitializer {
             unitOfWork.save(request1);
             unitOfWork.save(request2);
 
-            System.out.println("Data initialization complete: 2 Users, 3 Pets, 2 Requests created using UnitOfWork.");
+            // 4. Create a completed request and a rating
+            SittingRequest request3 = SittingRequest.builder()
+                    .pet(pet2)
+                    .requester(user1)
+                    .sitter(user2)
+                    .startTime(LocalDateTime.now().minusDays(2))
+                    .endTime(LocalDateTime.now().minusDays(2).plusHours(3))
+                    .status(SittingRequest.RequestStatus.COMPLETED)
+                    .priceOffered(new java.math.BigDecimal("45.00"))
+                    .build();
+            unitOfWork.save(request3);
+
+            Rating rating1 = Rating.builder()
+                    .sittingRequest(request3)
+                    .rater(user1)
+                    .ratedUser(user2)
+                    .stars(5)
+                    .comment("Bob did a fantastic job with Mittens!")
+                    .build();
+            unitOfWork.save(rating1);
+
+            System.out.println("Data initialization complete: 2 Users, 3 Pets, 3 Requests (1 completed), 1 Rating created.");
         };
     }
 }
