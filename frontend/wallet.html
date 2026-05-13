@@ -10,73 +10,113 @@
         @media (max-width: 768px) { .wallet-grid { grid-template-columns: 1fr; } }
 
         .balance-hero {
-            background: linear-gradient(135deg, #ff5a5f 0%, #ff8a4c 100%);
-            color: #fff;
-            padding: 28px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
+            background:
+                radial-gradient(600px 360px at 90% -20%, rgba(232,184,145,0.5), transparent 60%),
+                radial-gradient(500px 360px at 10% 110%, rgba(122,139,111,0.35), transparent 60%),
+                linear-gradient(160deg, var(--sage-tint) 0%, var(--peach-tint) 100%);
+            color: var(--ink);
+            padding: 36px 32px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
         }
-        .balance-hero .label { opacity: 0.85; font-size: 0.9rem; }
-        .balance-hero .amount { font-size: 2.6rem; font-weight: 700; margin: 4px 0 4px; letter-spacing: -0.02em; }
-        .balance-hero .hint { opacity: 0.85; font-size: 0.85rem; }
+        .balance-hero .label {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .balance-hero .amount {
+            font-family: var(--font-serif);
+            font-size: 3.2rem;
+            font-weight: 500;
+            margin: 6px 0 4px;
+            letter-spacing: -0.04em;
+            color: var(--ink);
+        }
+        .balance-hero .hint {
+            color: var(--ink-soft);
+            font-size: 0.82rem;
+        }
 
-        .balance-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        .balance-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
         @media (max-width: 480px) { .balance-split { grid-template-columns: 1fr; } }
         .balance-pill {
-            background: var(--surface);
+            background: var(--card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 16px;
+            padding: 18px;
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
-        .balance-pill .pill-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .balance-pill .pill-amount { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-        .balance-pill .pill-hint { font-size: 0.82rem; color: var(--muted); }
-        .balance-pill.earnings .pill-amount { color: var(--success); }
-        .balance-pill .pill-actions { margin-top: 8px; }
+        .balance-pill.credit   { background: var(--sage-tint);  border-color: transparent; }
+        .balance-pill.earnings { background: var(--peach-tint); border-color: transparent; }
+        .balance-pill .pill-label {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .balance-pill .pill-amount {
+            font-family: var(--font-serif);
+            font-size: 1.7rem;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+        }
+        .balance-pill .pill-hint { font-size: 0.82rem; color: var(--ink-soft); }
+        .balance-pill .pill-actions { margin-top: 10px; }
 
         .bonus-banner {
-            background: #fff5d6;
-            border: 1px solid #ffe18c;
-            color: #6b4f00;
-            padding: 12px 16px;
-            border-radius: var(--radius-sm);
+            background: var(--peach-tint);
+            border: 1px solid rgba(196,146,100,0.3);
+            color: #7A4F2A;
+            padding: 14px 18px;
+            border-radius: var(--radius);
             margin: 16px 0;
-            font-size: 0.95rem;
+            font-size: 0.93rem;
         }
 
         .tx-list { display: flex; flex-direction: column; gap: 0; }
         .tx { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
         .tx:last-child { border-bottom: none; }
         .tx-main { display: flex; flex-direction: column; gap: 2px; }
-        .tx-label { font-weight: 600; font-size: 0.95rem; }
-        .tx-date { color: var(--muted); font-size: 0.82rem; }
-        .tx-amount { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .tx-amount.neg { color: var(--danger); }
-        .tx-amount.pos { color: var(--success); }
-        .tx-amount.held { color: var(--warning); }
+        .tx-label { font-weight: 600; font-size: 0.95rem; color: var(--ink); }
+        .tx-date {
+            color: var(--ink-mute);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0.04em;
+        }
+        .tx-amount {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            color: var(--ink);
+        }
+        .tx-amount.neg  { color: var(--danger); }
+        .tx-amount.pos  { color: var(--success); }
+        .tx-amount.held { color: var(--peach-dark); }
 
         .card-saved {
-            background: #2b2b2b;
+            background: var(--ink);
             color: #fff;
             border-radius: var(--radius);
-            padding: 18px 20px;
+            padding: 20px 22px;
             margin-top: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .card-saved .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2px; }
+        .card-saved .num { font-family: var(--font-mono); letter-spacing: 2px; }
         .card-saved button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
-
-        .toast {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            background: var(--text); color: #fff; padding: 12px 20px; border-radius: 999px;
-            box-shadow: var(--shadow-hover); opacity: 0; transition: opacity 0.2s; pointer-events: none;
-        }
-        .toast.show { opacity: 1; }
     </style>
 </head>
 <body>
@@ -85,6 +125,7 @@
     <main class="page container">
         <div class="page-header">
             <div>
+                <div class="crumb">Wallet</div>
                 <h1 data-i18n="walletTitle">Wallet</h1>
                 <p data-i18n="walletSub">Your Pawsitters balance and recent payments.</p>
             </div>
@@ -103,7 +144,7 @@
                 <div id="bonusBanner" class="bonus-banner" style="display:none;"></div>
 
                 <div class="balance-split">
-                    <div class="balance-pill">
+                    <div class="balance-pill credit">
                         <span class="pill-label" data-i18n="walletOwnerCredit">Owner credit</span>
                         <span class="pill-amount" id="ownerCreditAmount">€—</span>
                         <span class="pill-hint" data-i18n="walletOwnerCreditHint">Spendable on bookings. Not withdrawable.</span>
@@ -113,7 +154,7 @@
                         <span class="pill-amount" id="earningsAmount">€—</span>
                         <span class="pill-hint" data-i18n="walletSitterEarningsHint">Money you've earned from completed sittings. Withdraw any time.</span>
                         <div class="pill-actions">
-                            <button class="btn btn-sm" id="withdrawBtn" data-i18n="withdraw" disabled>Withdraw earnings</button>
+                            <button class="btn btn-sm btn-sage" id="withdrawBtn" data-i18n="withdraw" disabled>Withdraw earnings</button>
                         </div>
                     </div>
                 </div>
@@ -148,7 +189,7 @@
                                 <input type="text" id="cardCvc" inputmode="numeric" pattern="[0-9]{3,4}" placeholder="123" required>
                             </div>
                         </div>
-                        <button type="submit" class="btn" data-i18n="addCard">Add card</button>
+                        <button type="submit" class="btn btn-sage" data-i18n="addCard">Add card</button>
                     </form>
                 </div>
             </div>
@@ -177,8 +218,10 @@
             const withdrawBtn = document.getElementById('withdrawBtn');
             const toast = document.getElementById('toast');
 
-            const CARD_KEY = `paws.card.${Session.user.id}`;
             let currentEarnings = 0;
+            // Card now lives on the AppUser server-side. We track the latest snapshot
+            // from GET /api/wallet/me so the request-new escrow split stays in sync.
+            let currentCard = null;
 
             function escapeHtml(s) {
                 return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
@@ -211,6 +254,16 @@
                 if (tx.status === 'REFUNDED') {
                     return { key: 'txRefunded', cls: 'pos', sign: '+' };
                 }
+                if (tx.status === 'REFUNDED_TO_CARD') {
+                    // Card refund — shown as informational, doesn't restore the wallet balance.
+                    const last4 = (currentCard && currentCard.last4) ? currentCard.last4 : '••••';
+                    return {
+                        key: 'txRefundedToCard',
+                        cls: '',
+                        sign: '',
+                        labelOverride: I18n.t('txRefundedToCard').replace('%LAST4%', last4)
+                    };
+                }
                 if (tx.status === 'RELEASED') {
                     if (isPayer) return { key: 'txReleased', cls: 'neg', sign: '' };
                     return { key: 'txEarned', cls: 'pos', sign: '+' };
@@ -222,7 +275,7 @@
                 if (!history || history.length === 0) {
                     historyContainer.innerHTML = `
                         <div class="empty">
-                            <div class="emoji">💳</div>
+                            <span class="empty-icon"><svg class="icon"><use href="#i-card"></use></svg></span>
                             <h3>${I18n.t('walletEmpty')}</h3>
                             <p>${I18n.t('walletEmptySub')}</p>
                         </div>`;
@@ -233,10 +286,11 @@
                     const d = txDescriptor(tx, me);
                     const dt = formatDate(tx.resolvedAt || tx.createdAt);
                     const amount = `€${Number(tx.amount).toFixed(2)}`;
+                    const label = d.labelOverride || I18n.t(d.key);
                     return `
                         <div class="tx">
                             <div class="tx-main">
-                                <span class="tx-label">${I18n.t(d.key)}</span>
+                                <span class="tx-label">${label}</span>
                                 <span class="tx-date">${dt}</span>
                             </div>
                             <div class="tx-amount ${d.cls}">${d.sign}${amount}</div>
@@ -244,37 +298,55 @@
                 }).join('')}</div>`;
             }
 
-            function renderSavedCard() {
-                const raw = localStorage.getItem(CARD_KEY);
-                if (!raw) { savedCardBlock.innerHTML = ''; cardForm.style.display = 'grid'; return; }
-                const card = JSON.parse(raw);
+            function renderSavedCard(card) {
+                currentCard = card;
+                if (!card) {
+                    savedCardBlock.innerHTML = '';
+                    cardForm.style.display = 'grid';
+                    return;
+                }
                 savedCardBlock.innerHTML = `
                     <div class="card-saved">
                         <div>
                             <div style="font-size: 0.8rem; opacity: 0.7;">${I18n.t('savedCard')}</div>
                             <div class="num">•••• •••• •••• ${escapeHtml(card.last4)}</div>
-                            <div style="font-size: 0.85rem; opacity: 0.7; margin-top:4px;">${escapeHtml(card.name)} · ${escapeHtml(card.expiry)}</div>
+                            <div style="font-size: 0.85rem; opacity: 0.7; margin-top:4px;">${escapeHtml(card.expiry || '')}</div>
                         </div>
                         <button class="btn btn-sm" id="removeCardBtn">${I18n.t('removeCard')}</button>
                     </div>`;
                 cardForm.style.display = 'none';
-                document.getElementById('removeCardBtn').addEventListener('click', () => {
-                    localStorage.removeItem(CARD_KEY);
-                    renderSavedCard();
+                document.getElementById('removeCardBtn').addEventListener('click', async () => {
+                    try {
+                        await Api.wallet.removeCard(Session.user.id);
+                        showToast(I18n.t('cardRemoved'));
+                        load();
+                    } catch (err) {
+                        alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                    }
                 });
             }
 
-            cardForm.addEventListener('submit', (e) => {
+            cardForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const num = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+                const last4 = num.slice(-4);
+                const cvc   = document.getElementById('cardCvc').value;   // never sent
                 const card = {
-                    name: document.getElementById('cardName').value,
-                    last4: num.slice(-4),
+                    cardholderName: document.getElementById('cardName').value,
+                    last4: last4,
                     expiry: document.getElementById('cardExpiry').value
+                    // intentionally no `cvc` in the payload — server discards it anyway
                 };
-                localStorage.setItem(CARD_KEY, JSON.stringify(card));
-                cardForm.reset();
-                renderSavedCard();
+                try {
+                    await Api.wallet.saveCard(Session.user.id, card);
+                    cardForm.reset();
+                    showToast(I18n.t('cardSavedToast'));
+                    load();
+                } catch (err) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+                // touch cvc once so linters don't complain about the unused read
+                void cvc;
             });
 
             withdrawBtn.addEventListener('click', async () => {
@@ -317,14 +389,14 @@
                         bonusBanner.style.display = 'none';
                     }
 
+                    renderSavedCard(data.card || null);
                     renderHistory(data.history);
                 } catch (err) {
                     alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
                 }
             }
 
-            document.addEventListener('paws:lang', () => { I18n.apply(); load(); renderSavedCard(); });
-            renderSavedCard();
+            document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
             load();
         }
     </script>

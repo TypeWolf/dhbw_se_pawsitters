@@ -6,11 +6,28 @@
     <title>Admin — Pawsitters</title>
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        /* Admin-specific: dense, utilitarian. Visually distinct from the marketing surfaces. */
-        body { background: #f4f5f7; }
-        .admin-header { background: #1f2530; color: #fff; padding: 24px 0; margin-bottom: 24px; }
-        .admin-header h1 { margin: 0; }
-        .admin-header p { color: #c2c8d2; margin: 4px 0 0; }
+        /* Admin: dense, utilitarian. Visually distinct from the marketing surfaces. */
+        body { background: var(--surface); }
+        .admin-header {
+            background: var(--ink);
+            color: #fff;
+            padding: 28px 0;
+            margin-bottom: 24px;
+        }
+        .admin-header h1 {
+            margin: 0;
+            color: #fff;
+            font-family: var(--font-serif);
+            font-size: 1.85rem;
+            letter-spacing: -0.02em;
+        }
+        .admin-header p {
+            color: rgba(255,255,255,0.65);
+            margin: 4px 0 0;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            letter-spacing: 0.04em;
+        }
 
         .stat-grid {
             display: grid;
@@ -19,23 +36,26 @@
             margin-bottom: 24px;
         }
         .stat-card {
-            background: var(--surface);
+            background: var(--card);
             border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 16px;
+            border-radius: var(--radius);
+            padding: 16px 18px;
         }
         .stat-card .label {
-            font-size: 0.72rem;
-            color: var(--muted);
-            font-weight: 600;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--ink-mute);
+            font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
         }
         .stat-card .value {
-            font-size: 1.75rem;
-            font-weight: 700;
+            font-family: var(--font-serif);
+            font-size: 1.85rem;
+            font-weight: 500;
             margin-top: 4px;
             font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
         }
 
         .tabs {
@@ -50,14 +70,13 @@
             cursor: pointer;
             background: none;
             border: none;
-            font: inherit;
-            font-weight: 500;
-            color: var(--muted);
+            font: 500 0.9rem var(--font-sans);
+            color: var(--ink-mute);
             border-bottom: 2px solid transparent;
             margin-bottom: -1px;
         }
-        .tab:hover { color: var(--text); }
-        .tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+        .tab:hover { color: var(--ink); }
+        .tab.active { color: var(--ink); border-bottom-color: var(--sage); font-weight: 600; }
 
         .panel { display: none; }
         .panel.active { display: block; }
@@ -65,17 +84,27 @@
         table.admin {
             width: 100%;
             border-collapse: collapse;
-            background: var(--surface);
-            border-radius: var(--radius-sm);
+            background: var(--card);
+            border-radius: var(--radius);
             overflow: hidden;
             font-size: 0.9rem;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-card);
         }
-        table.admin th, table.admin td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-        table.admin th { background: #fafafa; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        table.admin th, table.admin td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+        table.admin th {
+            background: var(--surface);
+            font: 500 0.7rem var(--font-mono);
+            color: var(--ink-mute);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
         table.admin tr:last-child td { border-bottom: none; }
-        table.admin tr:hover td { background: #fbfaf6; }
-        table.admin .id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-size: 0.85rem; }
+        table.admin tr:hover td { background: var(--surface); }
+        table.admin .id {
+            font-family: var(--font-mono);
+            color: var(--ink-mute);
+            font-size: 0.82rem;
+        }
         table.admin .num { font-variant-numeric: tabular-nums; }
 
         .roles-cell { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -92,7 +121,7 @@
             background: #fff;
         }
         .role-toggle input { margin: 0; }
-        .role-toggle.on { background: var(--text); color: #fff; border-color: var(--text); }
+        .role-toggle.on { background: var(--sage); color: #fff; border-color: var(--sage); }
 
         .scroll-x { overflow-x: auto; }
     </style>
@@ -300,7 +329,9 @@
             }
 
             function renderPaymentsTable(payments) {
-                const rows = payments.map(p => `<tr>
+                const rows = payments.map(p => {
+                    const statusClass = 'badge-' + (p.status || '').toLowerCase().replace(/_/g, '-');
+                    return `<tr>
                     <td class="id">${p.id}</td>
                     <td>${p.sittingRequestId ? `#${p.sittingRequestId}` : '—'}</td>
                     <td class="id">#${p.payerId}</td>
@@ -308,9 +339,11 @@
                     <td class="num">${money(p.amount)}</td>
                     <td class="num">${money(p.fromOwnerCredit)}</td>
                     <td class="num">${money(p.fromSitterEarnings)}</td>
-                    <td><span class="badge badge-${(p.status || '').toLowerCase()}">${p.status}</span></td>
+                    <td class="num">${money(p.fromCard)}</td>
+                    <td><span class="badge ${statusClass}">${p.status}</span></td>
                     <td>${formatDate(p.resolvedAt || p.createdAt)}</td>
-                </tr>`).join('');
+                </tr>`;
+                }).join('');
                 document.getElementById('paymentsTable').innerHTML = `
                     <table class="admin">
                         <thead><tr>
@@ -321,6 +354,7 @@
                             <th data-i18n="thAmount">Amount</th>
                             <th data-i18n="thFromCredit">From credit</th>
                             <th data-i18n="thFromEarnings">From earnings</th>
+                            <th>From card</th>
                             <th data-i18n="thStatus">Status</th>
                             <th data-i18n="thDate">Date</th>
                         </tr></thead>
