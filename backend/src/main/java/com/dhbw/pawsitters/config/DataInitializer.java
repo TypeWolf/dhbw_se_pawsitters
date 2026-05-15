@@ -108,7 +108,7 @@ public class DataInitializer {
                     .stars(5)
                     .comment("Bob did a fantastic job with Mittens!")
                     .build();
-            unitOfWork.save(rating1);
+            // unitOfWork.save(rating1);
 
             System.out.println("Data initialization complete: 2 Users, 3 Pets, 3 Requests (1 completed), 1 Rating created.");
         };
