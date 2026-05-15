@@ -48,22 +48,7 @@ jobs:
       run: npx playwright install --with-deps
       working-directory: ./e2e-tests
 
-    # 5. Start Backend and Frontend for E2E
-    - name: Start Backend in Background
-      run: java -jar target/*.jar &
-      working-directory: ./backend
-      env:
-        SPRING_PROFILES_ACTIVE: test
-
-    - name: Start Frontend Server
-      run: npx serve ../frontend -l 3000 &
-      working-directory: ./e2e-tests
-
-    - name: Wait for Services to be Ready
-      run: npx wait-on http://localhost:8080/api/users http://localhost:3000
-      working-directory: ./e2e-tests
-
-    # 6. Run E2E Tests
+    # 5. Run E2E Tests
     - name: Run Playwright Tests
       run: npx playwright test
       working-directory: ./e2e-tests
@@ -76,3 +61,4 @@ jobs:
         name: playwright-report
         path: e2e-tests/playwright-report/
         retention-days: 30
+

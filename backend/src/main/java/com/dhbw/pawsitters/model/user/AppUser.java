@@ -50,4 +50,7 @@ public class AppUser {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Pet> pets;
+
+    @Transient
+    private Double averageRating;
 }

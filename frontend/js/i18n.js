@@ -214,6 +214,17 @@ const translations = {
         completedToast: "Completed — sitter has been paid.",
         insufficientFunds: "You don't have enough funds. Your owner credit and earnings together don't cover this request.",
 
+        // Ratings
+        rateSitter: "Rate your sitter",
+        rateOwner: "Rate the owner",
+        stars: "Stars",
+        comment: "Comment",
+        submitRating: "Submit rating",
+        ratingSuccess: "Thank you for your rating!",
+        recommendedRating: "How was your experience? Rating helps the community.",
+        viewRatings: "View ratings",
+        averageRating: "Average rating",
+
         // Misc
         saveFailed: "Save failed: ",
         confirmDelete: "Are you sure?",
@@ -425,6 +436,17 @@ const translations = {
         confirmCompletePrompt: "Bestätigen, dass das Sitting erledigt wurde? €%PRICE% gehen an %SITTER%.",
         completedToast: "Bestätigt — der Sitter wurde bezahlt.",
         insufficientFunds: "Dein Guthaben reicht nicht. Halter-Guthaben und Verdienst zusammen decken diese Anfrage nicht.",
+
+        // Ratings
+        rateSitter: "Sitter bewerten",
+        rateOwner: "Besitzer bewerten",
+        stars: "Sterne",
+        comment: "Kommentar",
+        submitRating: "Bewertung senden",
+        ratingSuccess: "Danke für deine Bewertung!",
+        recommendedRating: "Wie war deine Erfahrung? Deine Bewertung hilft der Community.",
+        viewRatings: "Bewertungen ansehen",
+        averageRating: "Durchschnittsbewertung",
 
         saveFailed: "Speichern fehlgeschlagen: ",
         confirmDelete: "Bist du sicher?",

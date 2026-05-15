@@ -71,9 +71,19 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
-});
+  webServer: [
+    {
+      command: 'npx -y serve ../frontend -l 3000',
+      port: 3000,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: process.platform === 'win32' 
+        ? 'cd ../backend && mvnw.cmd spring-boot:run' 
+        : 'cd ../backend && chmod +x mvnw && ./mvnw spring-boot:run',
+      port: 8080,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180000, // 3 minutes for Maven to start
+    }
+  ],
+  });
