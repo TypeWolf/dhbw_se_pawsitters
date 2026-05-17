@@ -36,34 +36,38 @@ The system interacts with users via web browsers. It manages pets, sitting reque
 
 ### 3.3 Use Case Diagram
 ```mermaid
-usecaseDiagram
-    actor "Pet Owner" as owner
-    actor "Sitter" as sitter
-    actor "Administrator" as admin
+flowchart LR
+    %% Akteure
+    owner([Pet Owner])
+    sitter([Sitter])
+    admin([Administrator])
 
-    package Pawsitters {
-        usecase "Manage Pets" as UC1
-        usecase "Post Sitting Request" as UC2
-        usecase "Confirm Completion" as UC3
-        usecase "Cancel Request" as UC4
-        usecase "Browse Jobs" as UC5
-        usecase "Accept Job" as UC6
-        usecase "Withdraw Earnings" as UC7
-        usecase "Manage Users & Roles" as UC8
-        usecase "View Analytics" as UC9
-    }
+    %% Systemgrenze (Package)
+    subgraph Pawsitters
+        direction TB
+        UC1(Manage Pets)
+        UC2(Post Sitting Request)
+        UC3(Confirm Completion)
+        UC4(Cancel Request)
+        UC5(Browse Jobs)
+        UC6(Accept Job)
+        UC7(Withdraw Earnings)
+        UC8(Manage Users & Roles)
+        UC9(View Analytics)
+    end
 
-    owner --> UC1
-    owner --> UC2
-    owner --> UC3
-    owner --> UC4
+    %% Verbindungen
+    owner --- UC1
+    owner --- UC2
+    owner --- UC3
+    owner --- UC4
     
-    sitter --> UC5
-    sitter --> UC6
-    sitter --> UC7
+    sitter --- UC5
+    sitter --- UC6
+    sitter --- UC7
 
-    admin --> UC8
-    admin --> UC9
+    admin --- UC8
+    admin --- UC9
 ```
 
 ## 4. Solution Strategy
