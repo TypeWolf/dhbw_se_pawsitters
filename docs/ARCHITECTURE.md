@@ -34,6 +34,38 @@ The system interacts with users via web browsers. It manages pets, sitting reque
 [User Browser] <--- HTTP/JSON ---> [Spring Boot Backend] <--- JPA ---> [H2 Database]
 ```
 
+### 3.3 Use Case Diagram
+```mermaid
+usecaseDiagram
+    actor "Pet Owner" as owner
+    actor "Sitter" as sitter
+    actor "Administrator" as admin
+
+    package Pawsitters {
+        usecase "Manage Pets" as UC1
+        usecase "Post Sitting Request" as UC2
+        usecase "Confirm Completion" as UC3
+        usecase "Cancel Request" as UC4
+        usecase "Browse Jobs" as UC5
+        usecase "Accept Job" as UC6
+        usecase "Withdraw Earnings" as UC7
+        usecase "Manage Users & Roles" as UC8
+        usecase "View Analytics" as UC9
+    }
+
+    owner --> UC1
+    owner --> UC2
+    owner --> UC3
+    owner --> UC4
+    
+    sitter --> UC5
+    sitter --> UC6
+    sitter --> UC7
+
+    admin --> UC8
+    admin --> UC9
+```
+
 ## 4. Solution Strategy
 
 *   **Monolithic Backend:** A single Spring Boot application handles all business logic, data persistence, and API endpoints.
@@ -57,6 +89,45 @@ The system interacts with users via web browsers. It manages pets, sitting reque
 ## 6. Runtime View
 
 ### 6.1 Sitting Request Lifecycle
+```mermaid
+sequenceDiagram
+    participant O as Pet Owner
+    participant F as Frontend
+    participant B as Backend
+    participant DB as H2 Database
+
+    O->>F: Create Sitting Request
+    F->>B: POST /api/requests
+    B->>DB: Save Request (PENDING)
+    B->>DB: Update Wallet (Hold Funds)
+    B-->>F: 201 Created
+    F-->>O: Success Message
+
+    Note over O, DB: --- Sitter Interaction ---
+
+    participant S as Sitter
+    S->>F: Browse Job Marketplace
+    F->>B: GET /api/requests
+    B->>DB: Fetch PENDING requests
+    B-->>F: List of Requests
+    F-->>S: Display Jobs
+
+    S->>F: Accept Job
+    F->>B: PUT /api/requests/{id}/accept
+    B->>DB: Update Request (ACCEPTED)
+    B-->>F: 200 OK
+    F-->>S: Job Booked
+
+    Note over O, DB: --- Completion ---
+
+    O->>F: Confirm Completion
+    F->>B: PUT /api/requests/{id}/complete
+    B->>DB: Update Request (COMPLETED)
+    B->>DB: Release Funds to Sitter Wallet
+    B-->>F: 200 OK
+    F-->>O: Payment Released
+```
+
 1.  **Post:** Owner creates a request. Funds are "Held" in the wallet.
 2.  **Accept:** Sitter accepts the request. Status changes to `ACCEPTED`.
 3.  **Complete:** Owner confirms completion. Funds are "Released" to the sitter's earnings.
