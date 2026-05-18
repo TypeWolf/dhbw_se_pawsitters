@@ -157,8 +157,11 @@ const translations = {
         handover: "Handover",
         handoverType: "How will you hand the pet over?",
         handoverSitterHome: "Drop off at the sitter's home",
+        handoverSitterHomeDesc: "You bring the pet to them.",
         handoverMeet: "Meet at a place (e.g. park)",
+        handoverMeetDesc: "Park, café, anywhere in between.",
         handoverPickup: "Sitter picks up at my home (premium)",
+        handoverPickupDesc: "Premium · sitter comes to you.",
         handoverLocation: "Address or meeting point",
         handoverNotes: "Notes for the sitter (optional)",
         priceOffered: "How much will you pay? (€)",
@@ -179,6 +182,13 @@ const translations = {
         // Sitter side (Phase 3)
         jobsTitle: "Open sitter jobs",
         jobsSub: "Browse pet-owners looking for a sitter near you.",
+        filterAll: "All",
+        filterToday: "Today",
+        filterWeek: "This week",
+        filterDistance: "By distance",
+        trustVerified: "Verified",
+        trustInsured: "Insured",
+        thFromCard: "From card",
         noJobs: "No open jobs right now.",
         noJobsSub: "Check back later — owners post new requests every day.",
         acceptJob: "Accept this job",
@@ -450,8 +460,11 @@ const translations = {
         handover: "Übergabe",
         handoverType: "Wie wird das Tier übergeben?",
         handoverSitterHome: "Abgabe beim Sitter zu Hause",
+        handoverSitterHomeDesc: "Du bringst das Tier zu ihm/ihr.",
         handoverMeet: "Treffen an einem Ort (z. B. Park)",
+        handoverMeetDesc: "Park, Café, irgendwo dazwischen.",
         handoverPickup: "Sitter holt bei mir zu Hause ab (Premium)",
+        handoverPickupDesc: "Premium · Sitter kommt zu dir.",
         handoverLocation: "Adresse oder Treffpunkt",
         handoverNotes: "Hinweise für den Sitter (optional)",
         priceOffered: "Wie viel zahlst du? (€)",
@@ -471,6 +484,13 @@ const translations = {
 
         jobsTitle: "Offene Sitter-Aufträge",
         jobsSub: "Stöbere durch Tierhalter, die einen Sitter suchen.",
+        filterAll: "Alle",
+        filterToday: "Heute",
+        filterWeek: "Diese Woche",
+        filterDistance: "Nach Entfernung",
+        trustVerified: "Geprüft",
+        trustInsured: "Versichert",
+        thFromCard: "Von Karte",
         noJobs: "Aktuell keine offenen Aufträge.",
         noJobsSub: "Schau später wieder rein — täglich neue Anfragen.",
         acceptJob: "Auftrag annehmen",
@@ -600,7 +620,11 @@ const I18n = {
         root.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             const value = this.t(key);
-            if (el.tagName === 'INPUT' && el.type !== 'submit' && el.type !== 'button') {
+            const isPlaceholderInput = el.tagName === 'INPUT'
+                && el.type !== 'submit' && el.type !== 'button';
+            if (isPlaceholderInput || el.tagName === 'TEXTAREA') {
+                // <textarea> also takes a placeholder; setting textContent would
+                // wipe any user input and never translate the hint.
                 el.placeholder = value;
             } else {
                 el.textContent = value;

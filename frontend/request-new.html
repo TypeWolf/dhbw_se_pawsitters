@@ -60,7 +60,7 @@
                                 <svg class="icon"><use href="#i-door"></use></svg>
                                 <span data-i18n="handoverSitterHome">Drop off at the sitter's home</span>
                             </div>
-                            <div class="desc">You bring the pet to them.</div>
+                            <div class="desc" data-i18n="handoverSitterHomeDesc">You bring the pet to them.</div>
                         </label>
                         <label class="radio-card">
                             <input type="radio" name="handoverType" value="MEET_AT_PLACE">
@@ -68,7 +68,7 @@
                                 <svg class="icon"><use href="#i-pin"></use></svg>
                                 <span data-i18n="handoverMeet">Meet at a place</span>
                             </div>
-                            <div class="desc">Park, café, anywhere in between.</div>
+                            <div class="desc" data-i18n="handoverMeetDesc">Park, café, anywhere in between.</div>
                         </label>
                         <label class="radio-card">
                             <input type="radio" name="handoverType" value="OWNER_HOME_PICKUP">
@@ -76,7 +76,7 @@
                                 <svg class="icon"><use href="#i-house"></use></svg>
                                 <span data-i18n="handoverPickup">Sitter picks up at my home</span>
                             </div>
-                            <div class="desc">Premium · sitter comes to you.</div>
+                            <div class="desc" data-i18n="handoverPickupDesc">Premium · sitter comes to you.</div>
                         </label>
                     </div>
                 </div>
@@ -175,15 +175,18 @@
                     message = I18n.t('escrowSplitWallet').replace('%AMOUNT%', v.toFixed(2));
                 } else if (card) {
                     escrowNotice.classList.add('alert-info');
+                    // last4 is escaped before going into innerHTML (defence in depth;
+                    // the server already enforces a strict \d{4} format).
+                    const last4 = card.last4 ? escapeHtml(card.last4) : '••••';
                     if (walletPart > 0) {
                         message = I18n.t('escrowSplitMixed')
                             .replace('%WALLET%', walletPart.toFixed(2))
                             .replace('%CARD%',   cardPart.toFixed(2))
-                            .replace('%LAST4%',  card.last4 || '••••');
+                            .replace('%LAST4%',  last4);
                     } else {
                         message = I18n.t('escrowSplitCardOnly')
                             .replace('%CARD%',  cardPart.toFixed(2))
-                            .replace('%LAST4%', card.last4 || '••••');
+                            .replace('%LAST4%', last4);
                     }
                 } else {
                     escrowNotice.classList.add('alert-error');

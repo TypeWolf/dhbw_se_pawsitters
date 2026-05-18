@@ -117,13 +117,17 @@ public class WalletService {
 
     @Transactional
     public AppUser saveCard(Long userId, String cardholderName, String cardLast4, String cardExpiry) {
-        if (cardLast4 == null || cardLast4.isBlank()) {
-            throw new RuntimeException("Card number is required");
+        // Only the last 4 digits are ever stored. Validate strictly so the value
+        // is safe to interpolate into the UI (escrow notice / wallet history) and
+        // can never become an injection vector.
+        String last4 = cardLast4 == null ? "" : cardLast4.replaceAll("\\s+", "");
+        if (!last4.matches("\\d{4}")) {
+            throw new RuntimeException("Card last-4 must be exactly 4 digits");
         }
         AppUser user = userService.getUserById(userId);
-        user.setCardholderName(cardholderName);
-        user.setCardLast4(cardLast4);
-        user.setCardExpiry(cardExpiry);
+        user.setCardholderName(cardholderName == null ? null : cardholderName.trim());
+        user.setCardLast4(last4);
+        user.setCardExpiry(cardExpiry == null ? null : cardExpiry.trim());
         return unitOfWork.save(user);
     }
 

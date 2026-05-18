@@ -256,7 +256,8 @@
                 }
                 if (tx.status === 'REFUNDED_TO_CARD') {
                     // Card refund — shown as informational, doesn't restore the wallet balance.
-                    const last4 = (currentCard && currentCard.last4) ? currentCard.last4 : '••••';
+                    // last4 is escaped (defence in depth; the server already enforces \d{4}).
+                    const last4 = (currentCard && currentCard.last4) ? escapeHtml(currentCard.last4) : '••••';
                     return {
                         key: 'txRefundedToCard',
                         cls: '',

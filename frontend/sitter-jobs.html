@@ -65,10 +65,10 @@
         </div>
 
         <div class="filter-row">
-            <span class="pill active" data-filter="all">All</span>
-            <span class="pill" data-filter="today">Today</span>
-            <span class="pill" data-filter="week">This week</span>
-            <span class="pill" aria-disabled="true">By distance</span>
+            <span class="pill active" data-filter="all" data-i18n="filterAll">All</span>
+            <span class="pill" data-filter="today" data-i18n="filterToday">Today</span>
+            <span class="pill" data-filter="week" data-i18n="filterWeek">This week</span>
+            <span class="pill" aria-disabled="true" data-i18n="filterDistance">By distance</span>
         </div>
 
         <div id="alert"></div>
@@ -208,9 +208,9 @@
                             ${petTraitPills(j.pet) ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">${petTraitPills(j.pet)}</div>` : ''}
                             <div class="job-time">${formatRange(j.startTime, j.endTime)}</div>
                             <div class="trust-strip" style="background: var(--surface);">
-                                <span class="trust-item"><svg class="icon"><use href="#i-check"></use></svg> Verified</span>
+                                <span class="trust-item"><svg class="icon"><use href="#i-check"></use></svg> ${I18n.t('trustVerified')}</span>
                                 <span class="dot"></span>
-                                <span class="trust-item"><svg class="icon"><use href="#i-shield"></use></svg> Insured</span>
+                                <span class="trust-item"><svg class="icon"><use href="#i-shield"></use></svg> ${I18n.t('trustInsured')}</span>
                             </div>
                             <div class="job-row">
                                 <div>
