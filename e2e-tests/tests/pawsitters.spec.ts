@@ -55,13 +55,16 @@ test.describe('Pawsitters E2E Tests', () => {
     await page.click('#toggleForm');
     
     const uniquePetName = `Rex-${Math.floor(Math.random() * 10000)}`;
-    
-    // Add pet
+
+    // Add pet. Species is now a combobox (text input + datalist),
+    // age is an optional radio-card group (ADULT pre-selected by default).
     await page.fill('#petName', uniquePetName);
     await page.fill('#petSpecies', 'Dog');
     await page.fill('#petBreed', 'German Shepherd');
-    await page.fill('#petAge', '4');
-    
+    // Pick an age category by clicking its radio-card label (the radio input
+    // itself is visually hidden, so we click the card).
+    await page.locator('.radio-card:has(input[name="ageCategory"][value="YOUNG"])').click();
+
     await page.click('button[type="submit"]');
     
     // Verify pet is in the list
@@ -92,7 +95,7 @@ test.describe('Pawsitters E2E Tests', () => {
         await page.fill('#petName', 'Buddy');
         await page.fill('#petSpecies', 'Dog');
         await page.fill('#petBreed', 'Golden');
-        await page.fill('#petAge', '2');
+        // Age category defaults to ADULT (pre-checked) — no field to fill.
         await page.click('button[type="submit"]');
         await page.goto(`${BASE_URL}/request-new.html`);
         await page.waitForSelector('#petId option:not([value=""])');
@@ -120,10 +123,11 @@ test.describe('Pawsitters E2E Tests', () => {
     const tomorrowEndStr = formatDate(tomorrowEnd);
     
     await page.fill('#endTime', tomorrowEndStr);
-    
-    // Select handover type (required)
-    await page.selectOption('#handoverType', { index: 1 });
-    
+
+    // Handover type is now a radio-card group (SITTER_HOME pre-selected).
+    // Click the "meet at a place" card to exercise a non-default choice.
+    await page.locator('.radio-card:has(input[name="handoverType"][value="MEET_AT_PLACE"])').click();
+
     await page.fill('#handoverLocation', 'Central Park');
     // Set price to 0 to avoid "Insufficient funds"
     await page.fill('#priceOffered', '0');
