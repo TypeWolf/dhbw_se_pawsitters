@@ -10,68 +10,145 @@
     <header id="site-header" class="site-header"></header>
 
     <main>
-        <section class="hero container">
-            <h1 data-i18n="heroTitle">Find a trusted sitter for your pet, on your schedule.</h1>
-            <p class="lead" data-i18n="heroLead">Pawsitters connects pet owners with caring sitters in the neighbourhood. Post a request, get matched, and relax — your pet is in good hands.</p>
-            <div class="cta-row">
-                <a class="btn" href="signup.html" data-i18n="ctaGetStarted">Get started</a>
-                <a class="btn btn-secondary" href="login.html" data-i18n="ctaSignIn">I already have an account</a>
-            </div>
-        </section>
+        <div class="container">
+            <!-- Hero -->
+            <section class="hero">
+                <div class="hero-inner">
+                    <span class="pill pill-sage" style="margin-bottom: 24px;">
+                        <svg class="icon"><use href="#i-shield"></use></svg>
+                        <span data-i18n="heroTrust">Every sitter background-checked &amp; insured</span>
+                    </span>
+                    <h1>
+                        <span data-i18n="heroTitle">The right sitter,</span>
+                        <em data-i18n="heroTitleAccent">before</em>
+                        <span data-i18n="heroTitleTail">you need one.</span>
+                    </h1>
+                    <p class="lead" data-i18n="heroLead">Skip the panicked Sunday-night scramble. Match with a vetted, neighbourhood sitter who actually reads your care notes — most owners are booked in under 8 minutes.</p>
+                    <div class="cta-row">
+                        <a class="btn" href="signup.html">
+                            <span data-i18n="heroCtaFind">Find a sitter</span>
+                            <svg class="icon"><use href="#i-arrow-r"></use></svg>
+                        </a>
+                        <a class="btn btn-ghost" href="signup.html" data-i18n="heroCtaSit">I'm a sitter</a>
+                    </div>
 
-        <section class="section container" id="how">
-            <div class="section-title">
-                <h2 data-i18n="howItWorks">How it works</h2>
-                <p data-i18n="howItWorksSub">Three simple steps from request to reunion.</p>
-            </div>
-            <div class="steps">
-                <div class="card step">
-                    <span class="step-num">1</span>
-                    <h3 data-i18n="step1Title">Post a request</h3>
-                    <p data-i18n="step1Text">Tell us when you need a sitter, where to hand over, and how much you'd like to pay.</p>
+                    <div class="trust-strip">
+                        <span class="trust-item">
+                            <svg class="icon"><use href="#i-check"></use></svg>
+                            <span>ID verified</span>
+                        </span>
+                        <span class="dot"></span>
+                        <span class="trust-item">
+                            <svg class="icon"><use href="#i-shield"></use></svg>
+                            <span>Insured</span>
+                        </span>
+                        <span class="dot"></span>
+                        <span class="trust-item">
+                            <svg class="icon"><use href="#i-heart"></use></svg>
+                            <span>Pet first-aid certified</span>
+                        </span>
+                    </div>
                 </div>
-                <div class="card step">
-                    <span class="step-num">2</span>
-                    <h3 data-i18n="step2Title">A sitter accepts</h3>
-                    <p data-i18n="step2Text">Browse from trusted sitters in your area. Funds are held safely until completion.</p>
-                </div>
-                <div class="card step">
-                    <span class="step-num">3</span>
-                    <h3 data-i18n="step3Title">Reunite &amp; confirm</h3>
-                    <p data-i18n="step3Text">Pick up your pet, confirm everything went well, and the sitter gets paid.</p>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <section class="section container">
-            <div class="section-title">
-                <h2 data-i18n="whyPaws">Why Pawsitters?</h2>
-                <p data-i18n="whyPawsSub">Built for pet owners and sitters who care.</p>
+            <!-- Social proof bar -->
+            <div class="social-proof">
+                <div class="avatar-stack">
+                    <span class="avatar avatar-sm" style="background:#7A8B6F;">MR</span>
+                    <span class="avatar avatar-sm avatar-peach">DM</span>
+                    <span class="avatar avatar-sm" style="background:#C49264;color:#fff;">SK</span>
+                    <span class="avatar avatar-sm avatar-ink">TW</span>
+                </div>
+                <div class="meta">
+                    <strong data-i18n="socialProof">428 sitters available near you</strong>
+                </div>
+                <span class="rating">
+                    <svg class="icon"><use href="#i-star"></use></svg>
+                    <span>4.94</span>
+                </span>
             </div>
-            <div class="features">
-                <div class="card feature">
-                    <div class="icon">🐶</div>
-                    <h3 data-i18n="feature1Title">Trusted community</h3>
-                    <p data-i18n="feature1Text">Every sitter has a profile and history. You're never leaving your pet with a stranger.</p>
-                </div>
-                <div class="card feature">
-                    <div class="icon">💳</div>
-                    <h3 data-i18n="feature2Title">Secure payments</h3>
-                    <p data-i18n="feature2Text">Owners fund the booking up front. We only release it to the sitter once you say all went well.</p>
-                </div>
-                <div class="card feature">
-                    <div class="icon">📍</div>
-                    <h3 data-i18n="feature3Title">Flexible handover</h3>
-                    <p data-i18n="feature3Text">Drop off at the sitter, meet at a park, or have your sitter come pick up — your call.</p>
-                </div>
-            </div>
-        </section>
 
-        <section class="section container" style="text-align: center;">
-            <h2 data-i18n="ctaGetStarted">Get started</h2>
-            <p style="margin-bottom: 24px;" data-i18n="heroLead"></p>
-            <a class="btn" href="signup.html" data-i18n="ctaGetStarted">Get started</a>
-        </section>
+            <!-- Services -->
+            <section class="section" id="how" style="padding-top: 0;">
+                <div class="section-title">
+                    <h2 data-i18n="servicesTitle">Care for every routine.</h2>
+                    <p data-i18n="howItWorksSub">Three simple steps from request to reunion.</p>
+                </div>
+                <div class="services">
+                    <a class="service-card" href="signup.html">
+                        <div class="icon-chip"><svg class="icon"><use href="#i-door"></use></svg></div>
+                        <h3 data-i18n="serviceDropInLabel">Drop-in visit</h3>
+                        <div class="sub" data-i18n="serviceDropInSub">30 min</div>
+                    </a>
+                    <a class="service-card" href="signup.html">
+                        <div class="icon-chip"><svg class="icon"><use href="#i-leash"></use></svg></div>
+                        <h3 data-i18n="serviceWalkLabel">Dog walk</h3>
+                        <div class="sub" data-i18n="serviceWalkSub">30 / 60 min</div>
+                    </a>
+                    <a class="service-card" href="signup.html">
+                        <div class="icon-chip"><svg class="icon"><use href="#i-moon"></use></svg></div>
+                        <h3 data-i18n="serviceOvernightLabel">Overnight</h3>
+                        <div class="sub" data-i18n="serviceOvernightSub">In your home</div>
+                    </a>
+                    <a class="service-card" href="signup.html">
+                        <div class="icon-chip"><svg class="icon"><use href="#i-house"></use></svg></div>
+                        <h3 data-i18n="serviceBoardingLabel">Boarding</h3>
+                        <div class="sub" data-i18n="serviceBoardingSub">In sitter home</div>
+                    </a>
+                    <a class="service-card" href="signup.html">
+                        <div class="icon-chip"><svg class="icon"><use href="#i-sun"></use></svg></div>
+                        <h3 data-i18n="serviceDaycareLabel">Daycare</h3>
+                        <div class="sub" data-i18n="serviceDaycareSub">Daytime</div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- How it works -->
+            <section class="section" style="padding-top: 0;">
+                <div class="section-title">
+                    <h2 data-i18n="howItWorks">How it works</h2>
+                </div>
+                <div class="steps">
+                    <div class="step">
+                        <span class="step-num">1</span>
+                        <h3 data-i18n="step1Title">Post a request</h3>
+                        <p data-i18n="step1Text">Tell us when you need a sitter, where to hand over, and how much you'd like to pay.</p>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">2</span>
+                        <h3 data-i18n="step2Title">A sitter accepts</h3>
+                        <p data-i18n="step2Text">Browse from trusted sitters in your area. Funds are held safely until completion.</p>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">3</span>
+                        <h3 data-i18n="step3Title">Reunite &amp; confirm</h3>
+                        <p data-i18n="step3Text">Pick up your pet, confirm everything went well, and the sitter gets paid.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Editorial quote -->
+            <section class="section" style="padding-top: 0;">
+                <div class="quote-card">
+                    <blockquote>
+                        <span data-i18n="quoteBody">"Maya sent more photos than my mom does. My shy dog was relaxed by day two — that's a first."</span>
+                    </blockquote>
+                    <div class="attribution">
+                        <span class="avatar avatar-sm" style="background:#E8B891;color:#1F1B16;">HG</span>
+                        <span data-i18n="quoteAuthor">Hannah G. — Shiba owner</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Final CTA -->
+            <section class="section" style="text-align: center; padding-top: 0;">
+                <a class="btn btn-sage btn-lg" href="signup.html">
+                    <span data-i18n="getMatchedCta">Get matched in 8 minutes</span>
+                    <svg class="icon"><use href="#i-arrow-r"></use></svg>
+                </a>
+                <p class="text-mute" style="margin-top: 12px; font-size: 0.85rem;" data-i18n="feeFootnote">No fees until you book. Cancel free up to 48 h.</p>
+            </section>
+        </div>
     </main>
 
     <footer id="site-footer" class="site-footer"></footer>

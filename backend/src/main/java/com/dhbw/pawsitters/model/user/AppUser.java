@@ -47,6 +47,17 @@ public class AppUser {
     @Builder.Default
     private Set<Role> roles = EnumSet.of(Role.PET_OWNER, Role.SITTER);
 
+    // ---------- Saved card (mock) ----------
+    // Stored on the account so request-new can auto-charge it as a wallet fallback.
+    // CVC is NEVER persisted. The cardholder name is write-only over the API
+    // (storage only — we won't echo it back in responses since the user already knows it).
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String cardholderName;
+
+    private String cardLast4;
+
+    private String cardExpiry;
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Pet> pets;

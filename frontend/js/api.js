@@ -44,7 +44,10 @@ const Api = {
     },
     wallet: {
         me: (userId) => request(`/wallet/me?userId=${userId}`),
-        withdraw: (userId) => request(`/wallet/withdraw?userId=${userId}`, { method: 'POST' })
+        withdraw: (userId) => request(`/wallet/withdraw?userId=${userId}`, { method: 'POST' }),
+        saveCard: (userId, card) => request(`/wallet/card?userId=${userId}`,
+            { method: 'POST', body: JSON.stringify(card) }),
+        removeCard: (userId) => request(`/wallet/card?userId=${userId}`, { method: 'DELETE' })
     },
     admin: {
         users: (requesterId) => request(`/admin/users?requesterId=${requesterId}`),

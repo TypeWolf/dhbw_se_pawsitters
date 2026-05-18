@@ -21,7 +21,7 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Nullable — withdrawals are not tied to a sitting request. */
+    /** Nullable — withdrawals and refund-to-card rows are not tied to a sitting request. */
     private Long sittingRequestId;
 
     @Column(nullable = false)
@@ -40,6 +40,10 @@ public class Payment {
     @Column(precision = 12, scale = 2)
     private BigDecimal fromSitterEarnings;
 
+    /** How much of the held amount was auto-charged to the payer's saved card. */
+    @Column(precision = 12, scale = 2)
+    private BigDecimal fromCard;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
@@ -53,6 +57,7 @@ public class Payment {
         HELD,
         RELEASED,
         REFUNDED,
+        REFUNDED_TO_CARD,
         WITHDRAWN
     }
 }

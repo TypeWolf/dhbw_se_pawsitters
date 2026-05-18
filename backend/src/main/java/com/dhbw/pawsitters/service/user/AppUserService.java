@@ -27,12 +27,27 @@ public class AppUserService {
 
         // Check if email exists using generic getByProperty
         boolean exists = !unitOfWork.getByProperty(AppUser.class, "email", user.getEmail()).isEmpty();
-        
+
         if (exists) {
             throw new RuntimeException("Email already exists");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // Default roles for every new account.
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            user.setRoles(EnumSet.of(Role.PET_OWNER, Role.SITTER));
+        }
+
+        // Admin bootstrap: if no existing user has ADMIN, the new one gets it.
+        // Survives DataInitializer's seed users (they don't carry ADMIN) and
+        // doesn't depend on user id == 1L magic numbers.
+        boolean adminExists = unitOfWork.getAll(AppUser.class).stream()
+                .anyMatch(u -> u.getRoles() != null && u.getRoles().contains(Role.ADMIN));
+        if (!adminExists) {
+            user.getRoles().add(Role.ADMIN);
+        }
+
         return unitOfWork.save(user);
     }
 
@@ -63,18 +78,8 @@ public class AppUserService {
             throw new RuntimeException("Invalid password");
         }
 
-        if (user.getRoles() == null || user.getRoles().isEmpty()) {
-            user.setRoles(EnumSet.of(Role.PET_OWNER, Role.SITTER));
-        }
-
-        // Bootstrap: the very first registered user also becomes an admin
-        if (unitOfWork.count(AppUser.class) == 1 && user.getId() == 1L) {
-             if (!user.getRoles().contains(Role.ADMIN)) {
-                 user.getRoles().add(Role.ADMIN);
-                 user = unitOfWork.save(user);
-             }
-        }
-
+        // Role defaults + admin bootstrap live in register() now (auth bug fix),
+        // so login() only authenticates and decorates the user with its rating.
         ratingService.populateAverageRating(user);
         return user;
     }

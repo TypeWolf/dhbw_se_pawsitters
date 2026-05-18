@@ -6,10 +6,83 @@
     <title>My pets — Pawsitters</title>
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        .pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-        .pet-card h3 { margin-bottom: 4px; }
-        .pet-meta { color: var(--muted); font-size: 0.9rem; }
-        .pet-emoji { font-size: 2rem; margin-bottom: 8px; }
+        .pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+        .pet-card { padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+        .pet-card h3 { margin: 0; font-size: 1.2rem; }
+        .pet-card .pet-meta {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--ink-mute);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .pet-card .pet-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+        .pet-card .pet-tags .pill { font-size: 0.7rem; padding: 3px 9px; }
+
+        /* Species combobox + preview */
+        .species-row { display: flex; gap: 12px; align-items: center; }
+        .species-row input { flex: 1; }
+        #speciesPreview .species-tile,
+        #speciesPreview .avatar-pet { width: 56px; height: 56px; border-radius: 12px; }
+
+        /* Care-details disclosure */
+        .care-disclosure {
+            margin-top: 4px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--surface);
+        }
+        .care-toggle {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: none;
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font: 500 0.95rem var(--font-sans);
+            color: var(--ink);
+        }
+        .care-toggle:hover { background: var(--card); }
+        .care-toggle .icon { transition: transform 0.2s ease; }
+        .care-disclosure.open .care-toggle .icon { transform: rotate(90deg); }
+        .care-body { display: none; padding: 4px 18px 20px; background: var(--card); border-top: 1px solid var(--border); }
+        .care-disclosure.open .care-body { display: grid; gap: 18px; }
+        .care-section { display: grid; gap: 10px; }
+        .care-section-title {
+            font: 500 0.72rem var(--font-mono);
+            color: var(--ink-mute);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 6px;
+        }
+        .trait-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+        .trait-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-pill);
+            background: var(--card);
+            color: var(--ink-soft);
+            border: 1px solid var(--border-strong);
+            font: 500 0.82rem var(--font-sans);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.12s ease;
+        }
+        .trait-pill:hover { border-color: var(--sage); }
+        .trait-pill.on {
+            background: var(--sage-tint);
+            color: var(--sage-dark);
+            border-color: var(--sage);
+        }
+        .trait-pill input { display: none; }
+        .reveal-block { display: none; }
+        .reveal-block.shown { display: block; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -18,34 +91,137 @@
     <main class="page container">
         <div class="page-header">
             <div>
+                <div class="crumb">My pets</div>
                 <h1 data-i18n="petsTitle">My pets</h1>
                 <p data-i18n="petsSub">Add the pets a sitter might look after for you.</p>
             </div>
-            <button class="btn" id="toggleForm" data-i18n="addPet">Add a pet</button>
+            <button class="btn btn-sage" id="toggleForm">
+                <svg class="icon"><use href="#i-plus"></use></svg>
+                <span data-i18n="addPet">Add a pet</span>
+            </button>
         </div>
 
         <div id="alert"></div>
 
         <div class="card" id="petFormCard" style="display:none; margin-bottom: 24px;">
-            <h3 data-i18n="addPet">Add a pet</h3>
-            <form id="petForm" class="stack" style="max-width: 480px;">
+            <h3 data-i18n="addPet" style="margin-bottom: 16px;">Add a pet</h3>
+            <form id="petForm" class="stack" style="max-width: 560px;">
                 <div class="field">
                     <label data-i18n="petName">Name</label>
                     <input type="text" id="petName" required>
                 </div>
+
                 <div class="field">
                     <label data-i18n="petSpecies">Species</label>
-                    <input type="text" id="petSpecies" required>
+                    <div class="species-row">
+                        <input type="text" id="petSpecies" list="speciesList" autocomplete="off" data-i18n="petSpeciesPlaceholder" placeholder="Click or type — Dog, Cat, Rabbit, …" required>
+                        <div id="speciesPreview"></div>
+                    </div>
+                    <datalist id="speciesList"></datalist>
                 </div>
+
+                <div class="field">
+                    <label data-i18n="petAge">Age category</label>
+                    <div class="radio-card-group" id="ageGroup">
+                        <label class="radio-card">
+                            <input type="radio" name="ageCategory" value="PUPPY">
+                            <div class="label" data-i18n="ageCategoryPuppy">Puppy / Kitten</div>
+                            <div class="desc">0 – 1 year</div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="ageCategory" value="YOUNG">
+                            <div class="label" data-i18n="ageCategoryYoung">Young</div>
+                            <div class="desc">1 – 3 years</div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="ageCategory" value="ADULT" checked>
+                            <div class="label" data-i18n="ageCategoryAdult">Adult</div>
+                            <div class="desc">3 – 8 years</div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="ageCategory" value="SENIOR">
+                            <div class="label" data-i18n="ageCategorySenior">Senior</div>
+                            <div class="desc">8+ years</div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="field">
                     <label data-i18n="petBreed">Breed (optional)</label>
                     <input type="text" id="petBreed">
                 </div>
-                <div class="field">
-                    <label data-i18n="petAge">Age (years)</label>
-                    <input type="number" id="petAge" min="0" max="60">
+
+                <!-- Progressive disclosure for the rich care profile.
+                     Hidden by default so the basic form stays short. -->
+                <div class="care-disclosure" id="careDisclosure">
+                    <button type="button" class="care-toggle" id="careToggle" aria-expanded="false">
+                        <span data-i18n="addCareDetails">Add care details (optional)</span>
+                        <svg class="icon"><use href="#i-chev-r"></use></svg>
+                    </button>
+                    <div class="care-body">
+
+                        <div class="care-section">
+                            <div class="care-section-title" data-i18n="careHealth">Health</div>
+                            <div class="trait-pills">
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="vaccinated">
+                                    <span data-i18n="traitVaccinated">💉 Vaccinated</span>
+                                </label>
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="hasAllergies" data-reveal="allergiesReveal">
+                                    <span data-i18n="traitHasAllergies">Has allergies</span>
+                                </label>
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="takesMeds" data-reveal="medsReveal">
+                                    <span data-i18n="traitTakesMeds">Takes medication</span>
+                                </label>
+                            </div>
+                            <div class="reveal-block" id="allergiesReveal">
+                                <textarea id="allergies" maxlength="500" data-i18n="traitAllergiesPlaceholder" placeholder="What's the pet allergic to?"></textarea>
+                            </div>
+                            <div class="reveal-block" id="medsReveal">
+                                <textarea id="medications" maxlength="500" data-i18n="traitMedsPlaceholder" placeholder="Which meds, dose, schedule"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="care-section">
+                            <div class="care-section-title" data-i18n="careBehaviour">Behaviour</div>
+                            <div class="trait-pills">
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="houseTrained">
+                                    <span data-i18n="traitHouseTrained">🚽 House-trained</span>
+                                </label>
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="canGoOutside">
+                                    <span data-i18n="traitCanGoOutside">☀️ Goes outside</span>
+                                </label>
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="goodWithStrangers">
+                                    <span data-i18n="traitGoodWithStrangers">👋 Good with strangers</span>
+                                </label>
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="goodWithOtherAnimals">
+                                    <span data-i18n="traitGoodWithOtherAnimals">🐾 Good with other pets</span>
+                                </label>
+                                <label class="trait-pill" data-trait-pill>
+                                    <input type="checkbox" id="aggressive" data-reveal="aggressiveReveal">
+                                    <span data-i18n="traitAggressive">Aggressive or reactive</span>
+                                </label>
+                            </div>
+                            <div class="reveal-block" id="aggressiveReveal">
+                                <textarea id="aggressiveContext" maxlength="500" data-i18n="traitAggressiveContext" placeholder="In what situations?"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="care-section">
+                            <div class="care-section-title" data-i18n="careNotesSection">Notes</div>
+                            <textarea id="careNotes" maxlength="500" data-i18n="careNotesPlaceholder" placeholder="Feeding schedule, quirks, anything a sitter should know."></textarea>
+                        </div>
+
+                    </div>
                 </div>
-                <button type="submit" class="btn" data-i18n="savePet">Save pet</button>
+
+                <button type="submit" class="btn btn-sage" data-i18n="savePet">Save pet</button>
             </form>
         </div>
 
@@ -57,6 +233,7 @@
     <script src="js/i18n.js"></script>
     <script src="js/session.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/species.js"></script>
     <script src="js/layout.js"></script>
     <script>
         if (Session.requireAuth()) {
@@ -66,23 +243,58 @@
             const alertBox = document.getElementById('alert');
             const formCard = document.getElementById('petFormCard');
             const toggleBtn = document.getElementById('toggleForm');
+            const speciesInput = document.getElementById('petSpecies');
+            const speciesPreview = document.getElementById('speciesPreview');
+            const speciesList = document.getElementById('speciesList');
+            const careDisclosure = document.getElementById('careDisclosure');
+            const careToggle = document.getElementById('careToggle');
 
             toggleBtn.addEventListener('click', () => {
                 formCard.style.display = formCard.style.display === 'none' ? 'block' : 'none';
             });
 
-            function emojiFor(species) {
-                const s = (species || '').toLowerCase();
-                if (s.includes('dog') || s.includes('hund')) return '🐕';
-                if (s.includes('cat') || s.includes('katze')) return '🐈';
-                if (s.includes('bird') || s.includes('vogel')) return '🐦';
-                if (s.includes('rabbit') || s.includes('hase')) return '🐇';
-                if (s.includes('fish')) return '🐟';
-                return '🐾';
+            // Populate the <datalist> from SPECIES (so native dropdown + type-ahead work).
+            function populateSpeciesList() {
+                speciesList.innerHTML = SPECIES
+                    .filter(s => s.id !== 'other')
+                    .map(s => {
+                        const localized = I18n.t('species' + s.label.replace(/^./, c => c.toUpperCase()));
+                        // Use localized as the value so the catalog can find it via prefix match.
+                        return `<option value="${localized}"></option>`;
+                    }).join('');
             }
+            populateSpeciesList();
+
+            // Live preview of the selected species (photo or paw fallback).
+            function updateSpeciesPreview() {
+                speciesPreview.innerHTML = renderSpeciesTile(speciesInput.value, 'md');
+            }
+            speciesInput.addEventListener('input', updateSpeciesPreview);
+            speciesInput.addEventListener('change', updateSpeciesPreview);
+            updateSpeciesPreview();
+
+            // Care-details disclosure
+            careToggle.addEventListener('click', () => {
+                const open = careDisclosure.classList.toggle('open');
+                careToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+
+            // Trait pills toggle on/off; checkboxes with [data-reveal] show a textarea below.
+            document.querySelectorAll('[data-trait-pill]').forEach(pill => {
+                const cb = pill.querySelector('input[type=checkbox]');
+                const sync = () => {
+                    pill.classList.toggle('on', cb.checked);
+                    const targetId = cb.dataset.reveal;
+                    if (targetId) {
+                        document.getElementById(targetId).classList.toggle('shown', cb.checked);
+                    }
+                };
+                cb.addEventListener('change', sync);
+                sync();
+            });
 
             async function load() {
-                container.innerHTML = `<div class="empty"><div class="emoji">⏳</div><p>${I18n.t('loading')}</p></div>`;
+                container.innerHTML = `<div class="empty"><span class="empty-icon"><svg class="icon"><use href="#i-clock"></use></svg></span><p>${I18n.t('loading')}</p></div>`;
                 try {
                     const allPets = await Api.pets.list();
                     const myPets = allPets.filter(p => p.owner && p.owner.id === Session.user.id);
@@ -92,48 +304,90 @@
                 }
             }
 
+            function escapeHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            function traitPillsFor(pet) {
+                const pills = [];
+                if (pet.vaccinated)          pills.push({ key: 'traitVaccinated',          tone: 'sage'  });
+                if (pet.houseTrained)        pills.push({ key: 'traitHouseTrained',        tone: 'sage'  });
+                if (pet.canGoOutside)        pills.push({ key: 'traitCanGoOutside',        tone: 'peach' });
+                if (pet.goodWithStrangers)   pills.push({ key: 'traitGoodWithStrangers',   tone: 'peach' });
+                if (pet.goodWithOtherAnimals)pills.push({ key: 'traitGoodWithOtherAnimals',tone: 'sage'  });
+                if (pet.aggressive)          pills.push({ key: 'traitAggressive',          tone: 'peach' });
+                return pills.map(p => `<span class="pill pill-${p.tone}">${I18n.t(p.key)}</span>`).join('');
+            }
+
             function render(pets) {
                 if (pets.length === 0) {
                     container.innerHTML = `
                         <div class="empty">
-                            <div class="emoji">🐾</div>
+                            <span class="empty-icon"><svg class="icon"><use href="#i-paw"></use></svg></span>
                             <h3 data-i18n="noPets">${I18n.t('noPets')}</h3>
                             <p data-i18n="noPetsSub">${I18n.t('noPetsSub')}</p>
                         </div>`;
                     return;
                 }
-                container.innerHTML = `<div class="pet-grid">${pets.map(p => `
-                    <div class="card pet-card">
-                        <div class="pet-emoji">${emojiFor(p.species)}</div>
-                        <h3>${escapeHtml(p.name)}</h3>
-                        <div class="pet-meta">
-                            ${escapeHtml(p.species)}${p.breed ? ' · ' + escapeHtml(p.breed) : ''}
-                            ${p.age != null ? ' · ' + p.age + ' y' : ''}
+                container.innerHTML = `<div class="pet-grid">${pets.map(p => {
+                    const ageLabel = p.ageCategory ? I18n.t('ageCategory' + p.ageCategory.charAt(0) + p.ageCategory.slice(1).toLowerCase())
+                                                   : (p.age != null ? p.age + ' y' : '');
+                    const meta = [escapeHtml(p.species), p.breed && escapeHtml(p.breed), ageLabel].filter(Boolean).join(' · ');
+                    const tile = renderSpeciesTile(p.species, 'lg');
+                    const pills = traitPillsFor(p);
+                    return `
+                        <div class="card card-hover pet-card">
+                            ${tile}
+                            <h3>${escapeHtml(p.name)}</h3>
+                            <div class="pet-meta">${meta}</div>
+                            ${pills ? `<div class="pet-tags">${pills}</div>` : ''}
                         </div>
-                    </div>
-                `).join('')}</div>`;
-            }
-
-            function escapeHtml(s) {
-                return String(s).replace(/[&<>"']/g, c => ({
-                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-                }[c]));
+                    `;
+                }).join('')}</div>`;
             }
 
             document.getElementById('petForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 alertBox.innerHTML = '';
-                const age = document.getElementById('petAge').value;
+
+                const get  = id => document.getElementById(id);
+                const checked = id => get(id).checked;
+                const text = id => {
+                    const v = get(id).value.trim();
+                    return v ? v : null;
+                };
+                const selectedAge = document.querySelector('input[name=ageCategory]:checked');
+
                 const pet = {
-                    name: document.getElementById('petName').value,
-                    species: document.getElementById('petSpecies').value,
-                    breed: document.getElementById('petBreed').value || null,
-                    age: age ? parseInt(age, 10) : null,
+                    name: get('petName').value,
+                    species: get('petSpecies').value,
+                    breed: text('petBreed'),
+                    ageCategory: selectedAge ? selectedAge.value : null,
+                    // Health
+                    vaccinated:   checked('vaccinated'),
+                    allergies:    checked('hasAllergies') ? text('allergies') : null,
+                    medications:  checked('takesMeds')   ? text('medications') : null,
+                    // Behaviour
+                    houseTrained:         checked('houseTrained'),
+                    canGoOutside:         checked('canGoOutside'),
+                    goodWithStrangers:    checked('goodWithStrangers'),
+                    goodWithOtherAnimals: checked('goodWithOtherAnimals'),
+                    aggressive:           checked('aggressive'),
+                    aggressiveContext:    checked('aggressive') ? text('aggressiveContext') : null,
+                    // Notes
+                    careNotes: text('careNotes'),
                     owner: { id: Session.user.id }
                 };
                 try {
                     await Api.pets.create(pet);
                     e.target.reset();
+                    document.querySelectorAll('[data-trait-pill]').forEach(p => p.classList.remove('on'));
+                    document.querySelectorAll('.reveal-block').forEach(r => r.classList.remove('shown'));
+                    careDisclosure.classList.remove('open');
+                    careToggle.setAttribute('aria-expanded', 'false');
+                    updateSpeciesPreview();
                     formCard.style.display = 'none';
                     load();
                 } catch (err) {
@@ -141,7 +395,12 @@
                 }
             });
 
-            document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
+            document.addEventListener('paws:lang', () => {
+                I18n.apply();
+                populateSpeciesList();
+                updateSpeciesPreview();
+                load();
+            });
             load();
         }
     </script>
