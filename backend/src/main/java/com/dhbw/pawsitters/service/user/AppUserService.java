@@ -19,6 +19,9 @@ public class AppUserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.dhbw.pawsitters.service.rating.RatingService ratingService;
+
     public AppUser register(AppUser user) {
         validatePassword(user.getPassword());
 
@@ -75,20 +78,29 @@ public class AppUserService {
             throw new RuntimeException("Invalid password");
         }
 
+        // Role defaults + admin bootstrap live in register() now (auth bug fix),
+        // so login() only authenticates and decorates the user with its rating.
+        ratingService.populateAverageRating(user);
         return user;
     }
 
     public AppUser getUserByEmail(String email) {
-        return unitOfWork.getByProperty(AppUser.class, "email", email).stream()
+        AppUser user = unitOfWork.getByProperty(AppUser.class, "email", email).stream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        ratingService.populateAverageRating(user);
+        return user;
     }
 
     public List<AppUser> getAllUsers() {
-        return unitOfWork.getAll(AppUser.class);
+        List<AppUser> users = unitOfWork.getAll(AppUser.class);
+        users.forEach(ratingService::populateAverageRating);
+        return users;
     }
 
     public AppUser getUserById(Long id) {
-        return unitOfWork.getById(AppUser.class, id);
+        AppUser user = unitOfWork.getById(AppUser.class, id);
+        ratingService.populateAverageRating(user);
+        return user;
     }
 }

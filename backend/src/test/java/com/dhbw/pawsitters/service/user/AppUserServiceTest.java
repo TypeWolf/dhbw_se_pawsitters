@@ -42,6 +42,7 @@ public class AppUserServiceTest {
 
     @BeforeEach
     void setUp() {
+        unitOfWork.deleteAll(com.dhbw.pawsitters.model.rating.Rating.class);
         unitOfWork.deleteAll(com.dhbw.pawsitters.model.payment.Payment.class);
         unitOfWork.deleteAll(com.dhbw.pawsitters.model.sitting.SittingRequest.class);
         unitOfWork.deleteAll(com.dhbw.pawsitters.model.pet.Pet.class);

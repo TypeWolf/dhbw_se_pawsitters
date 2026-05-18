@@ -56,7 +56,16 @@ Tests payment holding, release, and refund logic.
     - `testRefundPayment`: Restores funds to the payer's wallet.
     - `testPaymentHistory`: Retrieves a history of all financial transactions for a user.
 
-### 6. AdminService
+### 6. RatingService
+Tests the 5-star rating system.
+- **Happy Path:**
+    - `testCreateRating`: Successfully create a rating for a completed request.
+    - `testAverageRating`: Correctly calculates the average stars for a user across multiple ratings.
+- **Bad Path:**
+    - `testCannotRateTwice`: Prevents multiple ratings for the same sitting request.
+    - `testOnlyCompletedCanBeRated`: Ensures ratings can only be submitted for COMPLETED requests.
+
+### 7. AdminService
 Tests administrative role management.
 - **Happy Path:**
     - `testRequireAdminHappyPath`: Confirms that admin-only checks pass for authorized users.
@@ -68,7 +77,7 @@ Tests administrative role management.
 ## Technical Details
 - **Test Framework:** JUnit 5, Spring Boot Test
 - **Database:** H2 (In-Memory)
-- **Total Tests:** 37
+- **Total Tests:** 45
 - **Database Cleanup:** A generic `deleteAll` method in `UnitOfWork` is used in `@BeforeEach` to clear tables in the correct order (respecting foreign key constraints).
 
 ## End-to-End (E2E) Test Coverage
@@ -89,9 +98,10 @@ The E2E suite (`e2e-tests/tests/pawsitters.spec.ts`) covers the following critic
 
 3. **Sitting Requests**
    - **Create Request:** Validates the flow of creating a new sitting request, including pet selection and date input, ensuring the request appears in "My Requests".
+   - **Rate Sitter:** Verifies that an owner can rate a sitter after a request is completed, and that the rating is reflected in the UI.
 
 ### Technical Details
 - **Framework:** Playwright
 - **Configuration:** `e2e-tests/playwright.config.ts`
 - **Base URL:** `http://localhost:3000` (default frontend port)
-- **Automatic Setup:** Tests include logic to ensure a pet exists before attempting to create a sitting request.
+- **Automatic Setup:** Tests include logic to ensure a pet exists before attempting to create a sitting request. The DataInitializer provides a completed request for testing the rating flow.

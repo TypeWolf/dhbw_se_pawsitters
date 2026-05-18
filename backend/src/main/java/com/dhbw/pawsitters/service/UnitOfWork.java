@@ -1,6 +1,7 @@
 package com.dhbw.pawsitters.service;
 
 import com.dhbw.pawsitters.model.pet.Pet;
+import com.dhbw.pawsitters.model.rating.Rating;
 import com.dhbw.pawsitters.model.sitting.SittingRequest;
 import com.dhbw.pawsitters.model.user.AppUser;
 import com.dhbw.pawsitters.repository.GenericRepository;
@@ -104,5 +105,9 @@ public class UnitOfWork {
 
     public List<SittingRequest> getRequestsByUser(AppUser user) {
         return getAllByUser(SittingRequest.class, user, "requester");
+    }
+
+    public List<Rating> getRatingsForUser(AppUser user) {
+        return getAllByUser(Rating.class, user, "ratedUser");
     }
 }
