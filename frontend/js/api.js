@@ -54,5 +54,11 @@ const Api = {
         setRoles: (requesterId, userId, roles) =>
             request(`/admin/users/${userId}/roles?requesterId=${requesterId}`,
                 { method: 'PUT', body: JSON.stringify(roles) })
+    },
+    ratings: {
+        create: (requestId, stars, comment, raterId) =>
+            request(`/ratings?requestId=${requestId}&stars=${stars}&comment=${encodeURIComponent(comment || '')}&raterId=${raterId}`, { method: 'POST' }),
+        listForUser: (userId) => request(`/ratings/user/${userId}`),
+        getAverage: (userId) => request(`/ratings/user/${userId}/average`)
     }
 };

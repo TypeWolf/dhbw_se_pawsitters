@@ -46,6 +46,7 @@ test.describe('Pawsitters E2E Tests', () => {
     await page.fill('#email', 'alice@example.com');
     await page.fill('#password', 'SecureP@ss123!');
     await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/.*dashboard(\.html)?/);
     
     // Navigate to Pets
     await page.click('nav a[href="pets.html"]');
@@ -74,6 +75,7 @@ test.describe('Pawsitters E2E Tests', () => {
     await page.fill('#email', 'alice@example.com');
     await page.fill('#password', 'SecureP@ss123!');
     await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/.*dashboard(\.html)?/);
     
     // Navigate to Request New
     await page.click('nav a[href="my-requests.html"]');
@@ -81,12 +83,12 @@ test.describe('Pawsitters E2E Tests', () => {
     
     // Select the first available pet
     // Make sure we wait for options to be populated
-    await page.waitForSelector('#petId option:not([value=""])', { timeout: 10000 }).catch(() => {});
+    await page.waitForSelector('#petId option', { timeout: 10000 }).catch(() => {});
     
     const options = page.locator('#petId option');
     const count = await options.count();
     
-    if (count <= 1) {
+    if (count === 0) {
         await page.goto(`${BASE_URL}/pets.html`);
         await page.click('#toggleForm');
         await page.fill('#petName', 'Buddy');
@@ -95,14 +97,14 @@ test.describe('Pawsitters E2E Tests', () => {
         await page.fill('#petAge', '2');
         await page.click('button[type="submit"]');
         await page.goto(`${BASE_URL}/request-new.html`);
-        await page.waitForSelector('#petId option:not([value=""])');
+        await page.waitForSelector('#petId option');
     }
 
-    const petOption = page.locator('#petId option').nth(1);
+    const petOption = page.locator('#petId option').first();
     const petLabel = await petOption.textContent();
     const petName = petLabel?.split(' ')[0] || 'Buddy';
     
-    await page.selectOption('#petId', { index: 1 });
+    await page.selectOption('#petId', { index: 0 });
     
     const formatDate = (date: Date) => {
         const pad = (n: number) => n.toString().padStart(2, '0');
@@ -122,7 +124,7 @@ test.describe('Pawsitters E2E Tests', () => {
     await page.fill('#endTime', tomorrowEndStr);
     
     // Select handover type (required)
-    await page.selectOption('#handoverType', { index: 1 });
+    await page.selectOption('#handoverType', { index: 0 });
     
     await page.fill('#handoverLocation', 'Central Park');
     // Set price to 0 to avoid "Insufficient funds"
@@ -140,10 +142,41 @@ test.describe('Pawsitters E2E Tests', () => {
     await page.fill('#email', 'alice@example.com');
     await page.fill('#password', 'SecureP@ss123!');
     await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/.*dashboard(\.html)?/);
     
     await page.click('#logoutBtn');
     
     await expect(page).toHaveURL(new RegExp(`${BASE_URL}/(index(\\.html)?)?$`));
     await expect(page.locator('nav')).toContainText('Log in');
+  });
+
+  test('should rate a sitter after completing a request', async ({ page, browserName }) => {
+    // Skip for other browsers because they share the same backend data
+    // and once one browser rates the request, it's no longer ratable for others.
+    test.skip(browserName !== 'chromium', 'Shared backend data makes multi-browser rating tests fail');
+
+    // 1. Login as Alice (owner)
+    await page.goto(`${BASE_URL}/login.html`);
+    await page.fill('#email', 'alice@example.com');
+    await page.fill('#password', 'SecureP@ss123!');
+    await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/.*dashboard(\.html)?/);
+
+    // 2. Navigate to My Requests
+    await page.click('nav a[href="my-requests.html"]');
+
+    // 3. Find the completed request from DataInitializer (which we made sure is unrated)
+    const rateButton = page.locator('button[data-rate]').first();
+    await expect(rateButton).toBeVisible();
+    await rateButton.click();
+
+    // 4. Fill the rating modal
+    await expect(page.locator('#rating-modal')).toBeVisible();
+    await page.click('.star-rating-input span[data-value="4"]');
+    await page.fill('#rating-comment', 'Bob was great!');
+    await page.click('#rating-form button[type="submit"]');
+
+    // 5. Verify success message
+    await expect(page.locator('.alert-success')).toBeVisible();
   });
 });

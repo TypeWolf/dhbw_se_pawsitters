@@ -3,6 +3,7 @@ package com.dhbw.pawsitters.service;
 import com.dhbw.pawsitters.model.pet.Pet;
 import com.dhbw.pawsitters.model.user.AppUser;
 import com.dhbw.pawsitters.repository.pet.PetRepository;
+import com.dhbw.pawsitters.repository.rating.RatingRepository;
 import com.dhbw.pawsitters.repository.sitting.SittingRequestRepository;
 import com.dhbw.pawsitters.repository.user.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,8 +32,12 @@ public class UnitOfWorkTest {
     @Autowired
     private SittingRequestRepository requestRepository;
 
+    @Autowired
+    private RatingRepository ratingRepository;
+
     @BeforeEach
     void setUp() {
+        ratingRepository.deleteAll();
         requestRepository.deleteAll();
         petRepository.deleteAll();
         userRepository.deleteAll();

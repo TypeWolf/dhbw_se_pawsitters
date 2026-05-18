@@ -88,6 +88,20 @@
                 return `${s.toLocaleDateString(undefined, dateOpts)} ${s.toLocaleTimeString(undefined, timeOpts)} – ${e.toLocaleDateString(undefined, dateOpts)} ${e.toLocaleTimeString(undefined, timeOpts)}`;
             }
 
+            function renderStars(avg) {
+                if (!avg || avg <= 0) return '';
+                const full = Math.floor(avg);
+                const half = avg % 1 >= 0.5 ? 1 : 0;
+                const empty = 5 - full - half;
+                return `
+                    <div class="star-rating-display" style="margin-top:4px;">
+                        <div class="stars">
+                            ${'★'.repeat(full)}${half ? '½' : ''}${'☆'.repeat(empty)}
+                        </div>
+                        <span class="rating-val">${avg.toFixed(1)}</span>
+                    </div>`;
+            }
+
             function showToast(msg) {
                 toast.textContent = msg;
                 toast.classList.add('show');
@@ -121,7 +135,15 @@
                 container.innerHTML = `<div class="job-grid">${jobs.map(j => {
                     const handover = j.handoverType ? I18n.t(HANDOVER_LABEL[j.handoverType]) : '—';
                     const price = j.priceOffered != null ? `€${Number(j.priceOffered).toFixed(2)}` : '—';
-                    const owner = j.requester ? `${escapeHtml(j.requester.firstName)} ${escapeHtml(j.requester.lastName)}` : '—';
+                    
+                    const ratingHtml = renderStars(j.requester ? j.requester.averageRating : 0);
+
+                    const owner = j.requester ? `
+                        <div>
+                            ${escapeHtml(j.requester.firstName)} ${escapeHtml(j.requester.lastName)}
+                            ${ratingHtml}
+                        </div>` : '—';
+
                     return `
                         <div class="card card-hover job-card">
                             <div class="job-head">

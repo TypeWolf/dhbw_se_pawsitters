@@ -24,20 +24,40 @@ public class SittingRequestService {
     @Autowired
     private PaymentService paymentService;
 
+    @Autowired
+    private com.dhbw.pawsitters.service.rating.RatingService ratingService;
+
     public List<SittingRequest> getAllRequests() {
-        return unitOfWork.getAll(SittingRequest.class);
+        List<SittingRequest> requests = unitOfWork.getAll(SittingRequest.class);
+        requests.forEach(this::populateRatings);
+        return requests;
     }
 
     public List<SittingRequest> getOpenRequests() {
-        return unitOfWork.getByProperty(SittingRequest.class, "status", SittingRequest.RequestStatus.PENDING);
+        List<SittingRequest> requests = unitOfWork.getByProperty(SittingRequest.class, "status", SittingRequest.RequestStatus.PENDING);
+        requests.forEach(this::populateRatings);
+        return requests;
     }
 
     public List<SittingRequest> getRequestsByRequester(Long requesterId) {
-        return unitOfWork.getByProperty(SittingRequest.class, "requester.id", requesterId);
+        List<SittingRequest> requests = unitOfWork.getByProperty(SittingRequest.class, "requester.id", requesterId);
+        requests.forEach(this::populateRatings);
+        return requests;
     }
 
     public List<SittingRequest> getRequestsBySitter(Long sitterId) {
-        return unitOfWork.getByProperty(SittingRequest.class, "sitter.id", sitterId);
+        List<SittingRequest> requests = unitOfWork.getByProperty(SittingRequest.class, "sitter.id", sitterId);
+        requests.forEach(this::populateRatings);
+        return requests;
+    }
+
+    private void populateRatings(SittingRequest request) {
+        if (request.getSitter() != null) {
+            ratingService.populateAverageRating(request.getSitter());
+        }
+        if (request.getRequester() != null) {
+            ratingService.populateAverageRating(request.getRequester());
+        }
     }
 
     @Transactional

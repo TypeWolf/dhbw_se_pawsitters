@@ -33,6 +33,36 @@
         <div id="container"></div>
     </main>
 
+    <!-- Rating Modal -->
+    <div id="rating-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="rating-modal-title" data-i18n="rateSitter">Rate your sitter</h3>
+                <button class="close-modal" id="close-rating">&times;</button>
+            </div>
+            <p data-i18n="recommendedRating" style="margin-bottom: 24px;">How was your experience? Rating helps the community.</p>
+            <form id="rating-form" class="stack">
+                <input type="hidden" id="rating-request-id">
+                <div class="field">
+                    <label data-i18n="stars">Stars</label>
+                    <div class="star-rating-input" id="star-input-container">
+                        <span data-value="1">★</span>
+                        <span data-value="2">★</span>
+                        <span data-value="3">★</span>
+                        <span data-value="4">★</span>
+                        <span data-value="5">★</span>
+                    </div>
+                    <input type="hidden" id="rating-stars" value="5" required>
+                </div>
+                <div class="field">
+                    <label data-i18n="comment">Comment</label>
+                    <textarea id="rating-comment" style="min-height: 100px;" data-i18n="comment"></textarea>
+                </div>
+                <button type="submit" class="btn btn-block" data-i18n="submitRating">Submit rating</button>
+            </form>
+        </div>
+    </div>
+
     <footer id="site-footer" class="site-footer"></footer>
 
     <script src="js/i18n.js"></script>
@@ -95,6 +125,20 @@
                 }
             }
 
+            function renderStars(avg) {
+                if (!avg || avg <= 0) return '';
+                const full = Math.floor(avg);
+                const half = avg % 1 >= 0.5 ? 1 : 0;
+                const empty = 5 - full - half;
+                return `
+                    <div class="star-rating-display" style="margin-top:4px;">
+                        <div class="stars">
+                            ${'★'.repeat(full)}${half ? '½' : ''}${'☆'.repeat(empty)}
+                        </div>
+                        <span class="rating-val">${avg.toFixed(1)}</span>
+                    </div>`;
+            }
+
             function render(requests) {
                 if (requests.length === 0) {
                     container.innerHTML = `
@@ -113,9 +157,18 @@
                     const badgeCls = STATUS_BADGE[status] || 'badge-pending';
                     const handover = r.handoverType ? I18n.t(HANDOVER_LABEL[r.handoverType]) : '—';
                     const price = r.priceOffered != null ? `€${Number(r.priceOffered).toFixed(2)}` : '—';
-                    const sitter = r.sitter ? `${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}` : '—';
+                    
+                    const ratingHtml = renderStars(r.sitter ? r.sitter.averageRating : 0);
+
+                    const sitter = r.sitter ? `
+                        <div>
+                            ${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}
+                            ${ratingHtml}
+                        </div>` : '—';
+
                     const canCancel = status === 'PENDING';
                     const canComplete = status === 'ACCEPTED';
+                    const canRate = status === 'COMPLETED';
                     const sitterName = r.sitter ? `${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}` : '';
                     return `
                         <div class="card req-card">
@@ -147,6 +200,7 @@
                                     <button class="btn btn-sm" data-complete="${r.id}" data-price="${r.priceOffered || 0}" data-sitter="${sitterName}">${I18n.t('confirmComplete')}</button>
                                     <span class="req-meta">${I18n.t('confirmCompleteHint')}</span>
                                 </div>` : ''}
+                            ${canRate ? `<div class="req-actions"><button class="btn btn-sm btn-secondary" data-rate="${r.id}" data-sitter="${sitterName}">${I18n.t('rateSitter')}</button></div>` : ''}
                         </div>`;
                 }).join('')}</div>`;
 
@@ -174,13 +228,75 @@
                         try {
                             await Api.requests.complete(btn.dataset.complete, Session.user.id);
                             load();
+                            // Automatically show rating modal after completion
+                            openRatingModal(btn.dataset.complete, sitterName);
                         } catch (err) {
                             btn.disabled = false;
                             alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
                         }
                     });
                 });
+
+                container.querySelectorAll('[data-rate]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openRatingModal(btn.dataset.rate, btn.dataset.sitter);
+                    });
+                });
             }
+
+            // Rating Modal Logic
+            const ratingModal = document.getElementById('rating-modal');
+            const ratingForm = document.getElementById('rating-form');
+            const starsInput = document.getElementById('rating-stars');
+            const starSpans = document.querySelectorAll('.star-rating-input span');
+
+            function openRatingModal(requestId, sitterName) {
+                document.getElementById('rating-request-id').value = requestId;
+                document.getElementById('rating-modal-title').textContent = 
+                    I18n.t('rateSitter') + (sitterName ? `: ${sitterName}` : '');
+                resetRatingForm();
+                ratingModal.style.display = 'flex';
+            }
+
+            function resetRatingForm() {
+                ratingForm.reset();
+                updateStars(5);
+            }
+
+            function updateStars(val) {
+                starsInput.value = val;
+                starSpans.forEach(s => {
+                    const sVal = parseInt(s.dataset.value);
+                    if (sVal <= val) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            }
+
+            starSpans.forEach(s => {
+                s.addEventListener('click', () => updateStars(parseInt(s.dataset.value)));
+            });
+
+            document.getElementById('close-rating').onclick = () => ratingModal.style.display = 'none';
+            window.onclick = (e) => { if (e.target === ratingModal) ratingModal.style.display = 'none'; };
+
+            ratingForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const requestId = document.getElementById('rating-request-id').value;
+                const stars = starsInput.value;
+                const comment = document.getElementById('rating-comment').value;
+                
+                try {
+                    await Api.ratings.create(requestId, stars, comment, Session.user.id);
+                    ratingModal.style.display = 'none';
+                    alertBox.innerHTML = `<div class="alert alert-success">${I18n.t('ratingSuccess')}</div>`;
+                    load();
+                } catch (err) {
+                    alertBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+                }
+            };
 
             document.addEventListener('paws:lang', () => { I18n.apply(); load(); });
             load();
