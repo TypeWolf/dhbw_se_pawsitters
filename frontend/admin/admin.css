@@ -1,0 +1,67 @@
+.admin-body {
+    background: linear-gradient(180deg, #f2f8f8, #fffdf8);
+}
+
+.admin-main {
+    padding: clamp(44px, 7vw, 84px) clamp(18px, 5vw, 72px);
+}
+
+.admin-hero {
+    max-width: 760px;
+    margin-bottom: 28px;
+}
+
+.admin-hero h1 {
+    font-size: clamp(3rem, 8vw, 6.2rem);
+}
+
+.admin-hero p {
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.admin-login {
+    width: min(460px, 100%);
+}
+
+.admin-dashboard {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+}
+
+.admin-section {
+    margin-top: 28px;
+}
+
+.admin-table {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: white;
+}
+
+.admin-table table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+}
+
+.admin-table th {
+    color: #33443b;
+    background: #eef6f1;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+}
+
+.admin-table tr:last-child td {
+    border-bottom: 0;
+}

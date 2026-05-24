@@ -4,12 +4,14 @@ import com.dhbw.pawsitters.model.user.AppUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "pets")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -28,6 +30,9 @@ public class Pet {
     private String breed;
 
     private Integer age;
+
+    @Version
+    private Long version;
 
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)

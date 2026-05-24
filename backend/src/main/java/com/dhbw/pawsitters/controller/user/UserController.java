@@ -1,27 +1,28 @@
 package com.dhbw.pawsitters.controller.user;
 
-import com.dhbw.pawsitters.model.user.AppUser;
+import com.dhbw.pawsitters.dto.user.UserResponse;
+import com.dhbw.pawsitters.mapper.ApiMapper;
 import com.dhbw.pawsitters.service.user.AppUserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/admin/users")
 public class UserController {
 
-    @Autowired
-    private AppUserService userService;
+    private final AppUserService userService;
+    private final ApiMapper mapper;
 
-    @GetMapping
-    public List<AppUser> getAllUsers() {
-        return userService.getAllUsers();
+    public UserController(AppUserService userService, ApiMapper mapper) {
+        this.userService = userService;
+        this.mapper = mapper;
     }
 
-    @PostMapping
-    public AppUser createUser(@RequestBody AppUser user) {
-        return userService.register(user);
+    @GetMapping
+    public List<UserResponse> getAllUsers() {
+        return userService.getAllUsers().stream()
+                .map(mapper::toUserResponse)
+                .toList();
     }
 }

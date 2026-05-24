@@ -1,328 +1,274 @@
-const translations = {
-    en: {
-        title: "Pawsitters Platform",
-        login: "Login",
-        register: "Register",
-        logout: "Logout",
-        welcome: "Welcome",
-        firstName: "First Name",
-        lastName: "Last Name",
-        email: "Email",
-        password: "Password",
-        petName: "Pet Name",
-        species: "Species (e.g. Dog)",
-        owner: "Owner",
-        addPet: "Add Your Pet",
-        createRequest: "Create Sitting Request",
-        startTime: "Start Time",
-        endTime: "End Time",
-        postRequest: "Post Request",
-        availableOffers: "Available Sitting Offers",
-        pet: "Pet",
-        time: "Time",
-        status: "Status",
-        action: "Action",
-        pending: "Pending",
-        acceptedBy: "Accepted by",
-        yourRequest: "(Your Request)",
-        accept: "Accept Offer",
-        delete: "Delete",
-        usersPetsInfo: "Users & Pets (Info)",
-        type: "Type",
-        name: "Name",
-        select: "Select...",
-        confirmDelete: "Are you sure you want to delete this request?",
-        loginFailed: "Login failed: ",
-        regSuccess: "Registration successful! Please login.",
-        regFailed: "Registration failed: ",
-        saveFailed: "Save failed: "
-    },
-    de: {
-        title: "Pawsitters Plattform",
-        login: "Anmelden",
-        register: "Registrieren",
-        logout: "Abmelden",
-        welcome: "Willkommen",
-        firstName: "Vorname",
-        lastName: "Nachname",
-        email: "E-Mail",
-        password: "Passwort",
-        petName: "Tiername",
-        species: "Tierart (z.B. Hund)",
-        owner: "Besitzer",
-        addPet: "Haustier hinzufügen",
-        createRequest: "Sitter-Anfrage erstellen",
-        startTime: "Startzeit",
-        endTime: "Endzeit",
-        postRequest: "Anfrage senden",
-        availableOffers: "Verfügbare Angebote",
-        pet: "Tier",
-        time: "Zeitraum",
-        status: "Status",
-        action: "Aktion",
-        pending: "Ausstehend",
-        acceptedBy: "Angenommen von",
-        yourRequest: "(Deine Anfrage)",
-        accept: "Annehmen",
-        delete: "Löschen",
-        usersPetsInfo: "Benutzer & Tiere (Info)",
-        type: "Typ",
-        name: "Name",
-        select: "Auswählen...",
-        confirmDelete: "Sind Sie sicher, dass Sie diese Anfrage löschen möchten?",
-        loginFailed: "Anmeldung fehlgeschlagen: ",
-        regSuccess: "Registrierung erfolgreich! Bitte anmelden.",
-        regFailed: "Registrierung fehlgeschlagen: ",
-        saveFailed: "Speichern fehlgeschlagen: "
-    }
+const API_BASE = window.PAWSITTERS_API_BASE || (
+    window.location.hostname && window.location.port === '8080'
+        ? '/api'
+        : 'http://localhost:8080/api'
+);
+
+const state = {
+    user: null,
+    csrf: null,
+    users: [],
+    pets: [],
+    requests: []
 };
 
-let currentLang = 'en';
+const elements = {};
 
-function i18n(key) {
-    return translations[currentLang][key] || key;
-}
+document.addEventListener('DOMContentLoaded', () => {
+    cacheElements();
+    bindEvents();
+    setupRevealAnimations();
+    restoreSession();
+});
 
-const API_BASE = 'http://localhost:8080/api';
-
-// --- State Management ---
-let currentUser = null;
-let users = [];
-let pets = [];
-let requests = [];
-
-// --- Selectors ---
-const authContainer = document.getElementById('authContainer');
-const userProfile = document.getElementById('userProfile');
-const mainContent = document.getElementById('mainContent');
-const loggedInUserName = document.getElementById('loggedInUserName');
-const loggedInEmail = document.getElementById('loggedInEmail');
-
-const petOwnerSelect = document.getElementById('petOwner');
-const requestPetSelect = document.getElementById('requestPet');
-const offerTableBody = document.querySelector('#offerTable tbody');
-const infoTableBody = document.querySelector('#infoTable tbody');
-
-// --- Language Switcher ---
-function setLanguage(lang) {
-    currentLang = lang;
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (el.tagName === 'INPUT' && el.type !== 'submit') {
-            el.placeholder = i18n(key);
-        } else if (el.tagName === 'OPTION') {
-            el.textContent = i18n(key);
-        } else {
-            el.textContent = i18n(key);
-        }
+function cacheElements() {
+    [
+        'adminLoginPanel',
+        'adminLoginForm',
+        'adminDashboard',
+        'adminWelcome',
+        'adminStatus',
+        'adminLogoutButton',
+        'adminUserCount',
+        'adminPetCount',
+        'adminRequestCount',
+        'adminUsers',
+        'adminPets',
+        'adminRequests',
+        'toastRegion'
+    ].forEach(id => {
+        elements[id] = document.getElementById(id);
     });
-    updateUI();
 }
 
-// --- Auth Functions ---
-async function login(email, password) {
-    try {
-        const res = await fetch(`${API_BASE}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        if (!res.ok) throw new Error(await res.text());
-        currentUser = await res.json();
-        onLoginSuccess();
-    } catch (err) {
-        alert(i18n('loginFailed') + err.message);
+function bindEvents() {
+    elements.adminLoginForm.addEventListener('submit', handleLogin);
+    elements.adminLogoutButton.addEventListener('click', handleLogout);
+}
+
+function setupRevealAnimations() {
+    const revealItems = document.querySelectorAll('.reveal');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+        revealItems.forEach(item => item.classList.add('is-visible'));
+        return;
     }
-}
 
-async function register(user) {
-    try {
-        const res = await fetch(`${API_BASE}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(user)
-        });
-        if (!res.ok) throw new Error(await res.text());
-        alert(i18n('regSuccess'));
-    } catch (err) {
-        alert(i18n('regFailed') + err.message);
-    }
-}
-
-function onLoginSuccess() {
-    authContainer.style.display = 'none';
-    userProfile.style.display = 'flex';
-    mainContent.style.display = 'block';
-    loggedInUserName.textContent = `${currentUser.firstName} ${currentUser.lastName}`;
-    loggedInEmail.textContent = currentUser.email;
-    fetchData();
-}
-
-function logout() {
-    currentUser = null;
-    authContainer.style.display = 'flex';
-    userProfile.style.display = 'none';
-    mainContent.style.display = 'none';
-}
-
-// --- API Calls ---
-async function fetchData() {
-    if (!currentUser) return;
-    try {
-        const [uRes, pRes, rRes] = await Promise.all([
-            fetch(`${API_BASE}/users`),
-            fetch(`${API_BASE}/pets`),
-            fetch(`${API_BASE}/requests`)
-        ]);
-        users = await uRes.json();
-        pets = await pRes.json();
-        requests = await rRes.json();
-        
-        updateUI();
-    } catch (err) {
-        console.error("Failed to fetch data", err);
-    }
-}
-
-// --- UI Updates ---
-function updateUI() {
-    if (!currentUser) return;
-
-    // Update Dropdowns
-    const updateSelect = (select, items, labelFn) => {
-        const currentVal = select.value;
-        select.innerHTML = `<option value="" data-i18n="select">${i18n('select')}</option>`;
-        items.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.id;
-            opt.textContent = labelFn(item);
-            select.appendChild(opt);
-        });
-        select.value = currentVal;
-    };
-
-    updateSelect(petOwnerSelect, users, u => `${u.firstName} ${u.lastName}`);
-    petOwnerSelect.value = currentUser.id;
-
-    const myPets = pets.filter(p => p.owner.id === currentUser.id);
-    updateSelect(requestPetSelect, myPets, p => `${p.name} (${p.species})`);
-
-    // Update Info Table
-    infoTableBody.innerHTML = '';
-    users.forEach(u => infoTableBody.insertAdjacentHTML('beforeend', `<tr><td>User</td><td>${u.firstName} ${u.lastName}</td><td>${u.id}</td></tr>`));
-    pets.forEach(p => infoTableBody.insertAdjacentHTML('beforeend', `<tr><td>Pet</td><td>${p.name} (${p.species})</td><td>${p.id}</td></tr>`));
-
-    // Update Offers Table
-    offerTableBody.innerHTML = '';
-    requests.forEach(req => {
-        const statusBadge = req.status === 'PENDING' 
-            ? `<span class="badge badge-pending">${i18n('pending')}</span>`
-            : `<span class="badge badge-accepted">${i18n('acceptedBy')} ${req.sitter.firstName}</span>`;
-        
-        let actions = '';
-        if (req.status === 'PENDING') {
-            if (req.requester.id !== currentUser.id) {
-                actions += `<button class="accept" onclick="acceptOffer(${req.id})">${i18n('accept')}</button> `;
-            } else {
-                actions += `<span style="color: #666; font-style: italic;">${i18n('yourRequest')}</span> `;
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
             }
-        }
+        });
+    }, { threshold: 0.14 });
 
-        if (req.requester.id === currentUser.id) {
-            actions += `<button class="delete" onclick="deleteOffer(${req.id})">${i18n('delete')}</button>`;
-        }
-
-        const row = `<tr>
-            <td>${req.pet.name}</td>
-            <td>${req.requester.firstName}</td>
-            <td>${new Date(req.startTime).toLocaleString()} - <br>${new Date(req.endTime).toLocaleString()}</td>
-            <td>${statusBadge}</td>
-            <td>${actions || '---'}</td>
-        </tr>`;
-        offerTableBody.insertAdjacentHTML('beforeend', row);
-    });
+    revealItems.forEach(item => observer.observe(item));
 }
 
-// --- Event Handlers ---
-document.getElementById('loginForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    login(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
-});
-
-document.getElementById('registerForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const user = {
-        firstName: document.getElementById('regFirstName').value,
-        lastName: document.getElementById('regLastName').value,
-        email: document.getElementById('regEmail').value,
-        password: document.getElementById('regPassword').value
-    };
-    register(user);
-    e.target.reset();
-});
-
-document.getElementById('petForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const pet = {
-        name: document.getElementById('petName').value,
-        species: document.getElementById('petSpecies').value,
-        owner: { id: parseInt(petOwnerSelect.value) }
-    };
+async function restoreSession() {
     try {
-        const res = await fetch(`${API_BASE}/pets`, {
+        state.user = await api('/me');
+        await ensureCsrf();
+        await loadAdminData();
+        showAdmin();
+    } catch (error) {
+        showLogin();
+    }
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    try {
+        state.user = await api('/auth/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(pet)
+            body: formData(event.currentTarget),
+            skipCsrf: true
         });
-        if (!res.ok) throw new Error(await res.text());
-        e.target.reset();
-        fetchData();
-    } catch (err) {
-        alert(i18n('saveFailed') + err.message);
+        await ensureCsrf();
+        await loadAdminData();
+        showAdmin();
+        showToast('Admin session ready.');
+    } catch (error) {
+        showToast(error.message, 'error');
     }
-});
+}
 
-document.getElementById('requestForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const petId = parseInt(requestPetSelect.value);
-    const pet = pets.find(p => p.id === petId);
-    
-    const request = {
-        pet: { id: petId },
-        requester: { id: currentUser.id },
-        startTime: document.getElementById('startTime').value,
-        endTime: document.getElementById('endTime').value
+async function handleLogout() {
+    try {
+        await api('/auth/logout', { method: 'POST' });
+    } catch (error) {
+        // The local UI still clears if the server already ended the session.
+    }
+    state.user = null;
+    state.csrf = null;
+    showLogin();
+    showToast('Logged out.');
+}
+
+async function loadAdminData() {
+    const [users, pets, requests] = await Promise.all([
+        api('/admin/users'),
+        api('/admin/pets'),
+        api('/admin/requests')
+    ]);
+    state.users = users;
+    state.pets = pets;
+    state.requests = requests;
+    renderAdmin();
+}
+
+function showAdmin() {
+    elements.adminLoginPanel.classList.add('hidden');
+    elements.adminDashboard.classList.remove('hidden');
+    elements.adminWelcome.textContent = `Welcome, ${state.user.firstName}`;
+    elements.adminStatus.textContent = `${state.user.email} has ${state.user.role} access.`;
+}
+
+function showLogin() {
+    elements.adminLoginPanel.classList.remove('hidden');
+    elements.adminDashboard.classList.add('hidden');
+}
+
+function renderAdmin() {
+    elements.adminUserCount.textContent = String(state.users.length);
+    elements.adminPetCount.textContent = String(state.pets.length);
+    elements.adminRequestCount.textContent = String(state.requests.length);
+
+    renderTable(elements.adminUsers, ['ID', 'Name', 'Email', 'Phone', 'Role'], state.users.map(user => [
+        user.id,
+        `${user.firstName} ${user.lastName}`,
+        user.email,
+        user.phoneNumber || '-',
+        user.role
+    ]));
+
+    renderTable(elements.adminPets, ['ID', 'Name', 'Species', 'Breed', 'Owner'], state.pets.map(pet => [
+        pet.id,
+        pet.name,
+        pet.species,
+        pet.breed || '-',
+        `${pet.owner.firstName} ${pet.owner.lastName}`
+    ]));
+
+    renderTable(elements.adminRequests, ['ID', 'Pet', 'Requester', 'Sitter', 'Window', 'Status'], state.requests.map(request => [
+        request.id,
+        request.pet.name,
+        `${request.requester.firstName} ${request.requester.lastName}`,
+        request.sitter ? `${request.sitter.firstName} ${request.sitter.lastName}` : '-',
+        `${formatDate(request.startTime)} to ${formatDate(request.endTime)}`,
+        request.status
+    ]));
+}
+
+function renderTable(container, headers, rows) {
+    container.replaceChildren();
+    if (rows.length === 0) {
+        container.append(node('p', { className: 'empty-state', text: 'No records yet.' }));
+        return;
+    }
+
+    const table = node('table');
+    const thead = node('thead');
+    const headRow = node('tr');
+    headers.forEach(header => headRow.append(node('th', { text: header })));
+    thead.append(headRow);
+
+    const tbody = node('tbody');
+    rows.forEach(row => {
+        const tr = node('tr');
+        row.forEach(cell => tr.append(node('td', { text: String(cell) })));
+        tbody.append(tr);
+    });
+
+    table.append(thead, tbody);
+    container.append(table);
+}
+
+function node(tag, props = {}, children = []) {
+    const element = document.createElement(tag);
+    Object.entries(props).forEach(([key, value]) => {
+        if (value === undefined || value === null) {
+            return;
+        }
+        if (key === 'text') {
+            element.textContent = value;
+        } else if (key === 'className') {
+            element.className = value;
+        } else {
+            element.setAttribute(key, value);
+        }
+    });
+    children.forEach(child => element.append(child));
+    return element;
+}
+
+function formData(form) {
+    const data = Object.fromEntries(new FormData(form).entries());
+    Object.keys(data).forEach(key => {
+        if (typeof data[key] === 'string') {
+            data[key] = data[key].trim();
+        }
+    });
+    return data;
+}
+
+async function api(path, options = {}) {
+    const method = options.method || 'GET';
+    const headers = new Headers(options.headers || {});
+    const init = {
+        method,
+        credentials: 'include',
+        headers
     };
 
-    await fetch(`${API_BASE}/requests`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
-    });
-    e.target.reset();
-    fetchData();
-});
-
-async function acceptOffer(requestId) {
-    try {
-        const response = await fetch(`${API_BASE}/requests/${requestId}/accept?sitterId=${currentUser.id}`, {
-            method: 'PUT'
-        });
-        if (!response.ok) throw new Error(await response.text());
-        fetchData();
-    } catch (err) {
-        alert(err.message);
+    if (options.body !== undefined) {
+        headers.set('Content-Type', 'application/json');
+        init.body = JSON.stringify(options.body);
     }
+
+    if (!options.skipCsrf && method !== 'GET' && method !== 'HEAD') {
+        await ensureCsrf();
+        headers.set(state.csrf.headerName, state.csrf.token);
+    }
+
+    const response = await fetch(`${API_BASE}${path}`, init);
+    const contentType = response.headers.get('content-type') || '';
+    const payload = contentType.includes('application/json') ? await response.json() : null;
+
+    if (!response.ok) {
+        if (response.status === 403) {
+            throw new Error('This account is not authorized for the admin workspace.');
+        }
+        throw new Error(payload?.message || `Request failed with status ${response.status}.`);
+    }
+
+    return payload;
 }
 
-async function deleteOffer(requestId) {
-    if (!confirm(i18n('confirmDelete'))) return;
-    await fetch(`${API_BASE}/requests/${requestId}`, { method: 'DELETE' });
-    fetchData();
+async function ensureCsrf() {
+    if (state.csrf) {
+        return state.csrf;
+    }
+    const response = await fetch(`${API_BASE}/auth/csrf`, {
+        method: 'GET',
+        credentials: 'include'
+    });
+    if (!response.ok) {
+        throw new Error('Could not prepare a secure request.');
+    }
+    state.csrf = await response.json();
+    return state.csrf;
 }
 
-// Poll every 5 seconds if logged in
-setInterval(() => { if (currentUser) fetchData(); }, 5000);
+function showToast(message, type = 'success') {
+    const toast = node('div', { className: type === 'error' ? 'toast error' : 'toast', text: message });
+    elements.toastRegion.append(toast);
+    window.setTimeout(() => toast.remove(), 4200);
+}
 
-// Initialize language
-document.addEventListener('DOMContentLoaded', () => setLanguage('en'));
+function formatDate(value) {
+    return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    }).format(new Date(value));
+}

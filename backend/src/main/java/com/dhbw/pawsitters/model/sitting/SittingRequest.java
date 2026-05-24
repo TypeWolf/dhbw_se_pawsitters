@@ -5,14 +5,17 @@ import com.dhbw.pawsitters.model.user.AppUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sitting_requests")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -41,7 +44,30 @@ public class SittingRequest {
     private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)
-    private RequestStatus status;
+    @Column(nullable = false)
+    @Builder.Default
+    private RequestStatus status = RequestStatus.PENDING;
+
+    @Column(nullable = false, updatable = false)
+    @Builder.Default
+    private Instant createdAt = Instant.now();
+
+    private Instant updatedAt;
+
+    @Version
+    private Long version;
+
+    @PrePersist
+    void prePersist() {
+        Instant now = Instant.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = Instant.now();
+    }
 
     public enum RequestStatus {
         PENDING,

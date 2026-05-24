@@ -1,27 +1,28 @@
 package com.dhbw.pawsitters.controller.pet;
 
-import com.dhbw.pawsitters.model.pet.Pet;
+import com.dhbw.pawsitters.dto.pet.PetResponse;
+import com.dhbw.pawsitters.mapper.ApiMapper;
 import com.dhbw.pawsitters.service.pet.PetService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/pets")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/admin/pets")
 public class PetController {
 
-    @Autowired
-    private PetService petService;
+    private final PetService petService;
+    private final ApiMapper mapper;
 
-    @GetMapping
-    public List<Pet> getAllPets() {
-        return petService.getAllPets();
+    public PetController(PetService petService, ApiMapper mapper) {
+        this.petService = petService;
+        this.mapper = mapper;
     }
 
-    @PostMapping
-    public Pet createPet(@RequestBody Pet pet) {
-        return petService.createPet(pet);
+    @GetMapping
+    public List<PetResponse> getAllPets() {
+        return petService.getAllPets().stream()
+                .map(mapper::toPetResponse)
+                .toList();
     }
 }
