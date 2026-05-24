@@ -4,11 +4,17 @@ Pawsitters is a Spring Boot and static frontend prototype for a pet sitting mark
 
 ## Run Locally
 
+Start PostgreSQL:
+
+```bash
+docker compose up -d postgres
+```
+
 Start the backend:
 
 ```bash
 cd backend
-sh ./mvnw spring-boot:run
+./mvnw spring-boot:run
 ```
 
 Start the frontend from the repository root:
@@ -34,13 +40,15 @@ The bootstrap creates the admin once if that email does not already exist.
 
 ```bash
 cd backend
-sh ./mvnw test
+./mvnw test
 node --check ../frontend/app.js
 node --check ../frontend/admin/admin.js
 ```
 
 ## Production Notes
 
-- Configure `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` for PostgreSQL with the `prod` profile.
+- PostgreSQL is the main database for dev, staging, and production.
+- H2 is reserved for the explicit `test` profile only.
+- Configure `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` for PostgreSQL with the `staging` or `prod` profile.
 - Configure `PAWSITTERS_ALLOWED_ORIGINS` to the deployed frontend origin.
 - Keep payment handling, messaging, background jobs, email verification, monitoring, and legal/GDPR workflows as separate production integration workstreams.

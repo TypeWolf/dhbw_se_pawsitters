@@ -10,6 +10,8 @@
 
 ## Data
 
+- PostgreSQL is the main database for development, staging, and production.
+- H2 is used only by the explicit `test` profile for fast local and CI regression tests.
 - `app_users` stores account identity, role, and password hash.
 - `pets` belongs to one owner.
 - `sitting_requests` belongs to a requester, may have one sitter, and uses optimistic versioning plus a locked accept flow.

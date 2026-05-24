@@ -8,7 +8,7 @@
 - CORS is centralized and restricted through `pawsitters.security.allowed-origins` instead of wildcard controller annotations.
 - Pet creation, request creation, request acceptance, and deletion derive identity from the authenticated principal.
 - Admin data lives under `/api/admin/**` and requires `ROLE_ADMIN`.
-- Flyway owns schema creation. Dev uses H2; production is configured for PostgreSQL.
+- Flyway owns schema creation. Development, staging, and production use PostgreSQL; H2 is reserved for the explicit test profile.
 
 ## Remaining Production Work
 

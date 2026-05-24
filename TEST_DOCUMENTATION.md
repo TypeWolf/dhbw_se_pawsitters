@@ -6,7 +6,7 @@ Run:
 
 ```bash
 cd backend
-sh ./mvnw test
+./mvnw test
 ```
 
 Current backend tests cover:
@@ -30,4 +30,5 @@ node --check frontend/admin/admin.js
 - Browser E2E tests for the full owner and sitter flows.
 - Accessibility checks for keyboard navigation and contrast.
 - Concurrency tests around two sitters accepting the same request.
+- PostgreSQL integration tests with Testcontainers once the project is ready to add containerized test infrastructure.
 - Production smoke tests against PostgreSQL.
