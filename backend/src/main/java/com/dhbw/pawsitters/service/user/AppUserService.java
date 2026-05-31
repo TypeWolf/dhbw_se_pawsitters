@@ -3,6 +3,8 @@ package com.dhbw.pawsitters.service.user;
 import com.dhbw.pawsitters.model.user.AppUser;
 import com.dhbw.pawsitters.service.UnitOfWork;
 import com.dhbw.pawsitters.model.user.Role;
+import com.dhbw.pawsitters.repository.user.AppUserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,13 @@ public class AppUserService {
 
     @Autowired
     private com.dhbw.pawsitters.service.rating.RatingService ratingService;
+
+    @Autowired
+    private AppUserRepository userRepository;
+
+    public AppUser saveUser(AppUser user) {
+        return userRepository.save(user);
+    }
 
     public AppUser register(AppUser user) {
         validatePassword(user.getPassword());

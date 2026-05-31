@@ -40,6 +40,8 @@ public class AppUser {
 
     private String phoneNumber;
 
+    private String address;
+    
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "app_user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)

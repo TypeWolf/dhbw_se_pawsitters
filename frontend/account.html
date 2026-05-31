@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mein Konto</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <header id="site-header" class="site-header"></header>
+
+    <main class="page container">
+        <h1>Mein Konto</h1>
+
+        <p>Email: <span id="email"></span></p>
+      
+
+
+
+        Adresse:
+        <input type="text" id="newAddress" placeholder="Adresse eingeben" onkeydown="if(event.key==='Enter') updateAddress()">
+
+    </main>
+
+    <footer id="site-footer" class="site-footer"></footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+
+    <script>
+        if (Session.requireAuth()) {
+            Layout.init('account');
+
+            const user = Session.user;
+
+            document.getElementById("email").innerText = user.email;
+            document.getElementById("newAddress").value = user.address || "";
+
+        }
+
+
+        function updateAddress() {
+            const user = Session.user;
+            const newAddress = document.getElementById("newAddress").value;
+
+            fetch(`http://localhost:8080/api/users/${user.id}/address`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    address: newAddress
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    Session.user = data;
+                    document.getElementById("newAddress").value = data.address || "";
+                    alert("Adresse gespeichert!");
+                });
+        }
+    </script>
+
+</body>
+
+</html>
