@@ -326,6 +326,11 @@ const translations = {
         viewRatings: "View ratings",
         averageRating: "Average rating",
 
+        // Chat
+        chatTitle: "Chat",
+        chatNoContacts: "No active chats",
+        chatInputPlaceholder: "Type a message...",
+
         // Misc
         saveFailed: "Save failed: ",
         confirmDelete: "Are you sure?",
@@ -647,6 +652,11 @@ const translations = {
         recommendedRating: "Wie war deine Erfahrung? Deine Bewertung hilft der Community.",
         viewRatings: "Bewertungen ansehen",
         averageRating: "Durchschnittsbewertung",
+
+        // Chat
+        chatTitle: "Chat",
+        chatNoContacts: "Keine aktiven Chats",
+        chatInputPlaceholder: "Nachricht tippen...",
 
         saveFailed: "Speichern fehlgeschlagen: ",
         confirmDelete: "Bist du sicher?",

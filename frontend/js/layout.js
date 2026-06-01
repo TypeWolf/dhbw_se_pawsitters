@@ -301,7 +301,7 @@ const Layout = {
     },
 
     /** One-call init for every page: fonts, sprite, header, footer, i18n. */
-    init(activePage = '') {
+    async init(activePage = '') {
         this._activePage = activePage;
         this.injectFonts();
         this.injectIconSprite();
@@ -309,5 +309,27 @@ const Layout = {
         this.renderHeader(activePage);
         this.renderFooter();
         I18n.apply();
+        
+        // Load and Initialize Chat if logged in
+        if (Session.isLoggedIn()) {
+            await this.injectChat();
+        }
+    },
+
+    async injectChat() {
+        if (typeof Chat !== 'undefined') {
+            Chat.init();
+            return;
+        }
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'js/chat.js';
+            script.onload = () => {
+                Chat.init();
+                I18n.apply();
+                resolve();
+            };
+            document.body.appendChild(script);
+        });
     }
 };
