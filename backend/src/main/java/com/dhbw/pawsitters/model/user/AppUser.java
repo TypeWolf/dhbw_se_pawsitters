@@ -41,6 +41,16 @@ public class AppUser {
     private String phoneNumber;
 
     private String address;
+
+    private String street;
+
+    private String houseNumber;
+
+    private String zipCode;
+
+    private String city;
+
+    private java.time.LocalDateTime createdAt;
     
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "app_user_roles", joinColumns = @JoinColumn(name = "user_id"))

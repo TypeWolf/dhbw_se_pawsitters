@@ -163,6 +163,81 @@ small, .mono { font-family: var(--font-mono); letter-spacing: 0.02em; }
 }
 .nav-cta:hover { background: var(--ink) !important; color: #fff !important; opacity: 0.92; }
 
+/* ---------- Dropdown ---------- */
+.nav-dropdown {
+    position: relative;
+    display: inline-block;
+}
+.nav-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    font: inherit;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-soft);
+    transition: all .15s ease;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    margin-left: 8px;
+    outline: none;
+}
+.nav-dropdown-toggle:hover, .nav-dropdown-toggle.active {
+    background: var(--sage-tint);
+    color: var(--sage-dark);
+    border-color: transparent;
+}
+.nav-dropdown-toggle .icon { width: 20px; height: 20px; }
+
+.nav-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hover);
+    padding: 8px;
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+    animation: dropdown-fade-in 0.15s ease-out;
+}
+.nav-dropdown-menu.show { display: flex; }
+
+@keyframes dropdown-fade-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.nav-dropdown-menu a {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all .15s ease;
+}
+.nav-dropdown-menu a:hover {
+    background: var(--surface);
+    color: var(--ink);
+}
+.nav-dropdown-menu a.active {
+    background: var(--sage-tint);
+    color: var(--sage-dark);
+}
+.nav-dropdown-menu hr {
+    margin: 8px 0;
+    border: none;
+    border-top: 1px solid var(--divider);
+}
+
 /* ---------- Footer ---------- */
 .site-footer {
     border-top: 1px solid var(--border);
@@ -250,6 +325,7 @@ form.stack { display: grid; gap: 14px; }
     letter-spacing: 0.08em;
 }
 input, select, textarea {
+    width: 100%;
     padding: 12px 14px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
@@ -369,6 +445,20 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-sans); }
 .avatar-pet-lg .icon { width: 48px; height: 48px; }
 .avatar-pet-peach { background: var(--peach-tint); color: var(--peach-dark); }
 .avatar-pet-ink   { background: var(--ink);        color: #fff; }
+
+.user-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: color .15s ease;
+}
+.user-link:hover {
+    color: var(--sage-dark);
+}
+.user-link:hover .avatar {
+    background: var(--sage-dark);
+}
 
 /* ---------- Section header ---------- */
 .section { padding: 56px 0; }
@@ -820,14 +910,54 @@ textarea { min-height: 90px; resize: vertical; font-family: var(--font-sans); }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ---------- Account Sidebar Layout ---------- */
+.account-layout {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+}
+.account-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    display: grid;
+    gap: 8px;
+    position: sticky;
+    top: 100px;
+}
+.account-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    color: var(--ink-soft);
+    font-weight: 500;
+    transition: all .15s ease;
+    cursor: pointer;
+}
+.account-sidebar-link:hover {
+    background: var(--surface);
+    color: var(--ink);
+}
+.account-sidebar-link.active {
+    background: var(--sage-tint);
+    color: var(--sage-dark);
+}
+.account-sidebar-link .icon { width: 20px; height: 20px; }
+
+.account-content {
+    flex: 1;
+    min-width: 0;
+}
+.account-section { display: none; }
+.account-section.active { display: block; animation: dropdown-fade-in 0.2s ease-out; }
+
+.hidden { display: none !important; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 980px) {
-    .services { grid-template-columns: repeat(2, 1fr); }
-    .grid-3 { grid-template-columns: 1fr 1fr; }
-    .hero { padding: 36px; }
-    .hero h1 { font-size: 3rem; }
-    .quote-card { padding: 32px; }
-    .quote-card blockquote { font-size: 1.6rem; }
+    .account-layout { flex-direction: column; gap: 32px; }
+    .account-sidebar { width: 100%; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); position: static; }
 }
 @media (max-width: 720px) {
     body { font-size: 15px; }

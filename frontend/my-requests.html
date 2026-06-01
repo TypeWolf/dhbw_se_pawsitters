@@ -127,6 +127,10 @@
                 }[c]));
             }
 
+            function initials(first, last) {
+                return ((first || '?').charAt(0) + (last || '').charAt(0)).toUpperCase();
+            }
+
             function formatRange(start, end) {
                 const s = new Date(start);
                 const e = new Date(end);
@@ -186,7 +190,8 @@
                     const ratingHtml = renderStars(r.sitter ? r.sitter.averageRating : 0);
 
                     const sitter = r.sitter ? `
-                        <div>
+                        <div class="user-link" onclick="Layout.openUserModal(${r.sitter.id})">
+                            <span class="avatar avatar-sm">${initials(r.sitter.firstName, r.sitter.lastName)}</span>
                             ${escapeHtml(r.sitter.firstName)} ${escapeHtml(r.sitter.lastName)}
                             ${ratingHtml}
                         </div>` : '—';
