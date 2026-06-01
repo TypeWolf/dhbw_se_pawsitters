@@ -63,5 +63,11 @@ const Api = {
             request(`/ratings?requestId=${requestId}&stars=${stars}&comment=${encodeURIComponent(comment || '')}&raterId=${raterId}`, { method: 'POST' }),
         listForUser: (userId) => request(`/ratings/user/${userId}`),
         getAverage: (userId) => request(`/ratings/user/${userId}/average`)
+    },
+    chat: {
+        contacts: (userId) => request(`/chat/contacts?userId=${userId}`),
+        messages: (requestId, userId) => request(`/chat/messages/${requestId}?userId=${userId}`),
+        send: (requestId, userId, content) =>
+            request(`/chat/messages/${requestId}?userId=${userId}`, { method: 'POST', body: JSON.stringify({ content }) })
     }
 };
