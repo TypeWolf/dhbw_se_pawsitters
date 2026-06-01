@@ -74,31 +74,52 @@ const Layout = {
         if (!header) return;
         const loggedIn = Session.isLoggedIn();
 
-        const navLink = (href, key, page) =>
-            `<a href="${href}" class="${activePage === page ? 'active' : ''}" data-i18n="${key}">${I18n.t(key)}</a>`;
+        const navLink = (href, key, page, icon = null) => {
+            const iconHtml = icon ? `<svg class="icon"><use href="${icon}"></use></svg>` : '';
+            return `<a href="${href}" class="${activePage === page ? 'active' : ''}">${iconHtml}<span data-i18n="${key}">${I18n.t(key)}</span></a>`;
+        };
 
         let nav;
         if (loggedIn) {
             const items = [
                 navLink('dashboard.html',   'navDashboard',  'dashboard'),
-                navLink('pets.html',        'navPets',       'pets'),
                 navLink('my-requests.html', 'navMyRequests', 'requests'),
-                navLink('sitter-jobs.html', 'navJobs',       'jobs'),
-                navLink('calendar.html',    'navCalendar',   'calendar'),
-                navLink('wallet.html',      'navWallet',     'wallet'),
-                navLink('account.html', 'navAccount', 'account')
+                navLink('sitter-jobs.html', 'navJobs',       'jobs')
             ];
+
+            const dropdownLinks = [
+                navLink('account.html', 'navAccount', 'account', '#i-user'),
+                navLink('pets.html', 'navPets', 'pets', '#i-paw'),
+                navLink('calendar.html', 'navCalendar', 'calendar', '#i-cal'),
+                navLink('wallet.html', 'navWallet', 'wallet', '#i-wallet')
+            ];
+
             if (Session.hasRole && Session.hasRole('ADMIN')) {
-                items.push(navLink('admin.html', 'navAdmin', 'admin'));
+                dropdownLinks.push(navLink('admin.html', 'navAdmin', 'admin', '#i-shield'));
             }
-            items.push(`<a href="#" id="logoutBtn" data-i18n="navLogout">${I18n.t('navLogout')}</a>`);
-            nav = items.join('');
+
+            const dropdownHtml = `
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-toggle ${['account','pets','calendar','wallet','admin'].includes(activePage) ? 'active' : ''}" id="accountDropdownBtn">
+                        <svg class="icon"><use href="#i-user"></use></svg>
+                    </button>
+                    <div class="nav-dropdown-menu" id="accountDropdownMenu">
+                        ${dropdownLinks.join('')}
+                        <hr>
+                        <a href="#" id="logoutBtn">
+                            <svg class="icon"><use href="#i-door"></use></svg>
+                            <span data-i18n="navLogout">${I18n.t('navLogout')}</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+            nav = items.join('') + dropdownHtml;
         } else {
             nav = [
                 navLink('index.html', 'navHome', 'home'),
-                `<a href="index.html#how" data-i18n="navHowItWorks">${I18n.t('navHowItWorks')}</a>`,
+                `<a href="index.html#how"> <span data-i18n="navHowItWorks">${I18n.t('navHowItWorks')}</span></a>`,
                 navLink('login.html', 'navLogin', 'login'),
-                `<a href="signup.html" class="nav-cta" data-i18n="navSignup">${I18n.t('navSignup')}</a>`
+                `<a href="signup.html" class="nav-cta"> <span data-i18n="navSignup">${I18n.t('navSignup')}</span></a>`
             ].join('');
         }
 
@@ -111,6 +132,19 @@ const Layout = {
                 <nav class="nav">${nav}</nav>
             </div>
         `;
+
+        // Dropdown toggle
+        const dropdownBtn = document.getElementById('accountDropdownBtn');
+        const dropdownMenu = document.getElementById('accountDropdownMenu');
+        if (dropdownBtn && dropdownMenu) {
+            dropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                dropdownMenu.classList.remove('show');
+            });
+        }
 
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) logoutBtn.addEventListener('click', e => { e.preventDefault(); Session.logout(); });
@@ -138,11 +172,140 @@ const Layout = {
         });
     },
 
+    /**
+     * Inject a hidden user details modal into the page.
+     */
+    injectUserModal() {
+        if (document.getElementById('user-details-modal')) return;
+        const modal = document.createElement('div');
+        modal.id = 'user-details-modal';
+        modal.className = 'modal';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3 data-i18n="userProfileTitle">User Profile</h3>
+                    <button class="close-modal" id="ud-close">&times;</button>
+                </div>
+                <div id="ud-body" class="stack" style="gap: 24px;">
+                    <!-- Header: Avatar + Name + Rating -->
+                    <div style="display:flex; gap:20px; align-items:center;">
+                        <div id="ud-avatar" class="avatar avatar-lg" style="width:80px; height:80px; font-size:1.5rem;">?</div>
+                        <div style="flex:1;">
+                            <h2 id="ud-full-name" style="margin:0; font-size:1.8rem;"></h2>
+                            <div style="display:flex; gap:12px; align-items:center; margin-top:4px;">
+                                <div id="ud-rating"></div>
+                                <span class="dot"></span>
+                                <span id="ud-city" class="text-soft" style="font-weight:500;"></span>
+                            </div>
+                            <div class="text-mute" style="font-size:0.85rem; margin-top:8px;">
+                                <span data-i18n="userJoined">Member since</span>: <span id="ud-joined"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid-2" style="gap: 16px;">
+                        <div class="card card-tinted-sage" style="padding:16px; text-align:center;">
+                            <div id="ud-stats-requests" style="font-size:1.5rem; font-weight:700; color:var(--sage-dark);">0</div>
+                            <div class="text-mute" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;" data-i18n="userStatsRequests">Open requests</div>
+                        </div>
+                        <div class="card card-tinted-peach" style="padding:16px; text-align:center;">
+                            <div id="ud-stats-sits" style="font-size:1.5rem; font-weight:700; color:var(--peach-dark);">0</div>
+                            <div class="text-mute" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;" data-i18n="userStatsSits">Sits completed</div>
+                        </div>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div>
+                        <h4 style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                            <span data-i18n="userReviews">Reviews</span>
+                            <span id="ud-reviews-count" class="pill pill-line" style="font-size:0.7rem; padding:2px 8px;">0</span>
+                        </h4>
+                        <div id="ud-reviews-list" class="stack" style="gap:12px; max-height:250px; overflow-y:auto; padding-right:8px;">
+                            <!-- Reviews injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('ud-close').onclick = () => modal.style.display = 'none';
+        window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    },
+
+    async openUserModal(userId) {
+        const modal = document.getElementById('user-details-modal');
+        if (!modal) return;
+        
+        // Reset
+        document.getElementById('ud-full-name').textContent = I18n.t('loading');
+        document.getElementById('ud-city').textContent = '';
+        document.getElementById('ud-joined').textContent = '';
+        document.getElementById('ud-rating').innerHTML = '';
+        document.getElementById('ud-stats-requests').textContent = '0';
+        document.getElementById('ud-stats-sits').textContent = '0';
+        document.getElementById('ud-reviews-count').textContent = '0';
+        document.getElementById('ud-reviews-list').innerHTML = '';
+        document.getElementById('ud-avatar').textContent = '?';
+
+        modal.style.display = 'flex';
+
+        try {
+            const data = await Api.users.get(userId);
+            
+            document.getElementById('ud-full-name').textContent = `${data.firstName} ${data.lastName}`;
+            document.getElementById('ud-city').textContent = data.city || '—';
+            document.getElementById('ud-joined').textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString(undefined, {month:'long', year:'numeric'}) : '—';
+            document.getElementById('ud-avatar').textContent = (data.firstName.charAt(0) + data.lastName.charAt(0)).toUpperCase();
+            
+            document.getElementById('ud-stats-requests').textContent = data.openRequestsCount || 0;
+            document.getElementById('ud-stats-sits').textContent = data.sitsCompletedCount || 0;
+            
+            if (data.averageRating) {
+                const avg = data.averageRating;
+                const full = Math.floor(avg);
+                const half = avg % 1 >= 0.5 ? 1 : 0;
+                document.getElementById('ud-rating').innerHTML = `
+                    <div class="star-rating-display">
+                        <div class="stars">${'★'.repeat(full)}${half ? '½' : ''}${'☆'.repeat(5-full-half)}</div>
+                        <span class="rating-val">${avg.toFixed(1)}</span>
+                    </div>`;
+            }
+
+            const reviews = data.ratings || [];
+            document.getElementById('ud-reviews-count').textContent = reviews.length;
+            
+            if (reviews.length === 0) {
+                document.getElementById('ud-reviews-list').innerHTML = `<div class="text-mute" style="font-size:0.9rem; font-style:italic;">No reviews yet.</div>`;
+            } else {
+                document.getElementById('ud-reviews-list').innerHTML = reviews.map(r => `
+                    <div class="card" style="padding:12px; font-size:0.9rem; background:var(--surface);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <div class="star-rating-display" style="font-size:0.8rem;">
+                                <div class="stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+                            </div>
+                            <div class="text-mute" style="font-size:0.75rem;">${new Date(r.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <div style="color:var(--ink-soft); line-height:1.4;">"${r.comment || 'No comment'}"</div>
+                        <div class="text-mute" style="font-size:0.7rem; margin-top:8px; text-align:right;">— ${r.rater ? r.rater.firstName : 'User'}</div>
+                    </div>
+                `).join('');
+            }
+
+            I18n.apply(modal);
+        } catch (err) {
+            document.getElementById('ud-full-name').textContent = 'Error loading profile';
+            console.error(err);
+        }
+    },
+
     /** One-call init for every page: fonts, sprite, header, footer, i18n. */
     init(activePage = '') {
         this._activePage = activePage;
         this.injectFonts();
         this.injectIconSprite();
+        this.injectUserModal();
         this.renderHeader(activePage);
         this.renderFooter();
         I18n.apply();

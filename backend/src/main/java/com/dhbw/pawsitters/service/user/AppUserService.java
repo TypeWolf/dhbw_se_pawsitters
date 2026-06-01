@@ -28,6 +28,9 @@ public class AppUserService {
     private AppUserRepository userRepository;
 
     public AppUser saveUser(AppUser user) {
+        if (user.getId() == null && user.getCreatedAt() == null) {
+            user.setCreatedAt(java.time.LocalDateTime.now());
+        }
         return userRepository.save(user);
     }
 
@@ -111,5 +114,41 @@ public class AppUserService {
         AppUser user = unitOfWork.getById(AppUser.class, id);
         ratingService.populateAverageRating(user);
         return user;
+    }
+
+    public AppUser updateProfile(Long id, AppUser updates) {
+        AppUser user = getUserById(id);
+        user.setFirstName(updates.getFirstName());
+        user.setLastName(updates.getLastName());
+        user.setPhoneNumber(updates.getPhoneNumber());
+        user.setStreet(updates.getStreet());
+        user.setHouseNumber(updates.getHouseNumber());
+        user.setZipCode(updates.getZipCode());
+        user.setCity(updates.getCity());
+        // For backwards compat or combined field
+        user.setAddress(updates.getStreet() + " " + updates.getHouseNumber() + ", " + updates.getZipCode() + " " + updates.getCity());
+        return saveUser(user);
+    }
+
+    public AppUser updateEmail(Long id, String newEmail) {
+        AppUser user = getUserById(id);
+        if (user.getEmail().equals(newEmail)) return user;
+
+        boolean exists = !unitOfWork.getByProperty(AppUser.class, "email", newEmail).isEmpty();
+        if (exists) {
+            throw new RuntimeException("Email already exists");
+        }
+        user.setEmail(newEmail);
+        return saveUser(user);
+    }
+
+    public void updatePassword(Long id, String oldPassword, String newPassword) {
+        AppUser user = unitOfWork.getById(AppUser.class, id);
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Invalid current password");
+        }
+        validatePassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
+        saveUser(user);
     }
 }

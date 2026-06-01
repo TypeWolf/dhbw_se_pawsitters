@@ -215,7 +215,7 @@
                             <div class="job-row">
                                 <div>
                                     <strong>${I18n.t('owner')}</strong>
-                                    <span style="display:inline-flex; align-items:center; gap:6px;">
+                                    <span class="user-link" onclick="Layout.openUserModal(${j.requester.id})">
                                         <span class="avatar avatar-sm">${ownerInitials}</span>${owner}
                                     </span>
                                     ${ratingHtml}
