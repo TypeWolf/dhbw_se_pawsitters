@@ -24,4 +24,12 @@ public class UserController {
     public AppUser createUser(@RequestBody AppUser user) {
         return userService.register(user);
     }
+    @CrossOrigin(origins = "*")
+    @PutMapping("/{id}/address")
+    public AppUser updateAddress(@PathVariable Long id, @RequestBody AppUser user) {
+        AppUser existing = userService.getUserById(id);
+        existing.setAddress(user.getAddress());
+        return userService.saveUser(existing);
+    }
+
 }

@@ -85,7 +85,8 @@ const Layout = {
                 navLink('my-requests.html', 'navMyRequests', 'requests'),
                 navLink('sitter-jobs.html', 'navJobs',       'jobs'),
                 navLink('calendar.html',    'navCalendar',   'calendar'),
-                navLink('wallet.html',      'navWallet',     'wallet')
+                navLink('wallet.html',      'navWallet',     'wallet'),
+                navLink('account.html', 'navAccount', 'account')
             ];
             if (Session.hasRole && Session.hasRole('ADMIN')) {
                 items.push(navLink('admin.html', 'navAdmin', 'admin'));
