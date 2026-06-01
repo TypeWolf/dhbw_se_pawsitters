@@ -1,0 +1,7 @@
+target/
+Dockerfile
+.git
+.gitignore
+mvnw
+mvnw.cmd
+.mvn/
