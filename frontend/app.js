@@ -324,5 +324,10 @@ async function deleteOffer(requestId) {
 // Poll every 5 seconds if logged in
 setInterval(() => { if (currentUser) fetchData(); }, 5000);
 
-// Initialize language
-document.addEventListener('DOMContentLoaded', () => setLanguage('en'));
+// Initialize language & auto-fill-address
+
+document.addEventListener('DOMContentLoaded', () => {
+    setLanguage('en');
+});
+
+
