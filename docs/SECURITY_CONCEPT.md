@@ -1,43 +1,56 @@
-# Security Concept - Pawsitters
+# Security Concept *    Pawsitters
 
-This document outlines the security measures and architectural decisions taken to protect user data and ensure the integrity of the Pawsitters platform.
+This document outlines the security architecture and measures implemented in the Pawsitters project. The goal is to ensure Confidentiality, Integrity, and Availability (CIA) of user data and system resources.
 
 ## 1. Authentication & Authorization
 
 ### 1.1 User Authentication
-- **Mechanism:** Users authenticate using their email and a password.
-- **Current State:** Password hashing is implemented using BCrypt.
-- **Planned Improvements:** Implementation of JWT (JSON Web Tokens) for stateless session management.
+The system uses a robust authentication mechanism to verify user identities.
+*   **Password Policy (NIST SP 800*   63B):** Enforces a minimum length of 12 characters and multi*   class complexity (uppercase, lowercase, digits, special characters) to maximize entropy.
+*   **Credential Storage:** Passwords are never stored in plaintext. The system uses **BCrypt (via Spring Security's BCryptPasswordEncoder)** with a high cost factor to protect against rainbow table and brute*   force attacks.
+*   **Backend Validation:** All security rules are enforced at the service layer to prevent API*   based bypasses.
+*    **Session Management:** Introduction of **JWT (JSON Web Tokens)** for stateless session management to replace the current model*   based login.
 
 ### 1.2 Authorization Rules
-- **Access Control:** Only authenticated users can access pet management and sitting requests.
-- **Ownership:** Users can only create requests for pets they own.
-- **Prevention of Self-Acceptance:** Logic is implemented to prevent users from accepting their own sitting requests.
-- **Deletion Rights:** Only the requester (owner) has the authority to delete a sitting request.
+The system employs **Role*   Based Access Control (RBAC)**:
+*   **USER / PET_OWNER / SITTER:** Standard roles for application features.
+*   **ADMIN:** Reserved for system maintenance and administrative actions.
+*   **Principle of Least Privilege:** Users are granted only the permissions necessary for their specific roles.
+* **Ownership:** Users can only create requests for animals that belong to them.
+* **Prevention of Self*   Acceptance:** Logic prevents users from being able to accept their own pet sitting requests.
+* **Deletion Rights:** Only the requester (owner) of a request has the authority to delete it.
 
 ## 2. Data Protection
 
 ### 2.1 Sensitive Information
-- **Passwords:** Stored as BCrypt hashes.
-- **Personal Data:** Minimal personal data is collected (Name, Email, Phone).
+*    **Passwords:** Are stored as BCrypt hashes.
+*    **Personal Data:** Only minimal necessary data is collected (name, email, phone number, address for handling the pet sitting).
 
 ### 2.2 Database Security
-- **Isolation:** The application uses an H2 in-memory database for development, which is isolated from external access.
-- **JPA/Hibernate:** Using JPA helps prevent SQL Injection by using prepared statements automatically.
+*    **Isolation:** The application uses an H2 In*   Memory database for development, which is protected from external access.
+*    **JPA/Hibernate:** The use of JPA prevents SQL injection attacks by automatically using Prepared Statements.
+*   **Data Minimization:** Only necessary user data (email, name, pet info) is collected.
+*   **Right to Access/Delete:** Users can view and manage their profiles through the `UserController`.
 
 ## 3. Communication Security
 
-### 3.1 Cross-Origin Resource Sharing (CORS)
-- **Current State:** Permissive (`@CrossOrigin("*")`) for development ease.
-- **Planned Improvements:** Restricting CORS origins to specific trusted frontend domains in production.
+### 3.1 TLS/SSL
+*    All communication between frontend and backend is intended to use HTTPS (TLS 1.2+) for production deployment.
 
-### 3.2 TLS/SSL
-- All communication between the frontend and backend should be encrypted via HTTPS in a production environment.
+## 4. Input Validation & Error Handling
 
-## 4. Input Validation
-- **Frontend Validation:** The registration form includes live feedback for password security (12+ characters, uppercase, lowercase, numbers, and special characters). Submission is blocked if requirements are not met.
-- **Backend Validation:** Strict password validation is performed in the service layer.
-- **Error Handling:** A global exception handler maps validation and business logic failures to `400 Bad Request` responses with descriptive error messages, avoiding generic `500 Internal Server Error` responses.
+### 4.1 Validation
+*    **Frontend Validation:** The registration form provides real*   time feedback on password security (min. 12 characters, upper/lower case, numbers, and special characters).
+*    **Backend Validation:** Strict password validation also takes place in the `AppUserService` to ensure that no insecure passwords can be registered via the API.
+*    **Structured Validation:** 
+    *    Minimum length: 12 characters
+    *    At least one uppercase letter
+    *    At least one lowercase letter
+    *    At least one number
+    *    At least one special character (`!@#$%^&*`)
 
----
-*Last Updated: 2026-05-08*
+### 4.2 Error Handling
+*    A `GlobalExceptionHandler` in the backend catches validation and logic errors and converts them into structured `400 Bad Request` responses with descriptive error messages. This prevents internal system details (stack traces) from being exposed.
+
+--- 
+*Last Updated: June 17, 2026*

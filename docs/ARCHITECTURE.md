@@ -1,49 +1,69 @@
-# System-Architektur - Ablauf- und Sequenzdiagramm
+# System Architecture - Flow and Sequence Diagram
 
-Dieses Dokument beschreibt die detaillierte Architektur von **Pawsitters** anhand eines Sequenzdiagramms, das den Weg einer Anfrage vom Frontend bis zur Datenbank abbildet.
+This document describes the detailed architecture of **Pawsitters** using a sequence diagram that maps the path of a request from the frontend to the database.
 
-## Architektur-Übersicht
+## Technology Stack
 
-Die Anwendung folgt einer klassischen Schichtenarchitektur mit dem **Unit of Work** Pattern im Backend:
+### Backend
+- **Language/Runtime**: Java 17
+- **Framework**: Spring Boot 3.4.1
+- **Data Access**: Spring Data JPA / Hibernate
+- **Security**: Spring Security (BCrypt for password hashing)
+- **Build Tool**: Maven
+- **Documentation**: README.md, ARCHITECTURE.md, SECURITY_CONCEPT.md
 
-1.  **Presentation Layer**: HTML5, CSS3 und Vanilla JavaScript (Browser).
-2.  **API Layer**: Spring Boot REST-Controller.
-3.  **Service Layer**: Business-Logik (Spring Services).
+### Frontend
+- **Language**: Vanilla JavaScript (ES6+ Modules)
+- **Styling**: CSS3 (Vanilla)
+- **Structure**: HTML5
+- **Communication**: REST API via Fetch API (`api.js`)
+
+### Infrastructure & Database
+- **Database**: H2 (In-Memory for development)
+- **Containerization**: Docker & Docker Compose
+
+## Architecture Overview
+
+The application follows a classic layered architecture with the **Unit of Work** pattern in the backend:
+
+1.  **Presentation Layer**: HTML5, CSS3, and Vanilla JavaScript (Browser).
+2.  **API Layer**: Spring Boot REST Controllers.
+3.  **Service Layer**: Business Logic (Spring Services).
 4.  **Persistence Layer**: 
-    - **Unit of Work**: Verwaltet Repositories und Transaktionen.
-    - **Generic Repository**: Abstrahiert CRUD-Operationen.
-    - **JPA / Hibernate**: Objekt-Relationales Mapping.
-    - **Database**: H2 (In-Memory) für Entwicklung.
+    - **Unit of Work**: Manages repositories and transactions.
+    - **Generic Repository**: Abstracts CRUD operations.
+    - **JPA / Hibernate**: Object-Relational Mapping.
+    - **Database**: H2 (In-Memory) for development.
 
-## Detailliertes Sequenzdiagramm
+## Detailed Sequence Diagram
 
 ```mermaid
 sequenceDiagram
     autonumber
     
-    participant User as 👤 User / Tierhalter
+    participant User as 👤 User / Pet Owner
     participant Browser as 🌐 Browser (HTML/JS/api.js)
     
     box "Backend (Spring Boot App)" #f9f9f9
     participant Controller as 🔌 REST Controller
-    participant Service as 🧠 Business Service (z.B. SittingRequestService)
+    participant Service as 🧠 Business Service (e.g., SittingRequestService)
     participant PSvc as 💳 Payment Service
     participant UoW as 📦 Unit of Work
     participant Repo as 📚 Generic Repository
     participant JPA as 🛠️ JPA / EntityManager
     end
     
-    participant DB as 🗄️ Datenbank (H2)
+    participant DB as 🗄️ Database (H2)
 
-    Note over User, DB: Phase 1: Systemstart & Initialisierung
-    Note right of UoW: PawsittersApplication startet
-    UoW->>DB: Schema-Generierung & Validierung
-    Note right of UoW: DataInitializer.initData() wird ausgeführt
-    UoW->>DB: Einfügen von Testdaten (User, Pets, Requests)
+    Note over User, DB: Phase 1: System Startup & Initialization
+    Note right of UoW: PawsittersApplication starts
+    UoW->>DB: Schema Generation & Validation
+    Note right of UoW: DataInitializer.initData() is executed
+    UoW->>DB: Inserting test data (Users, Pets, Requests)
     
-    Note over User, DB: Phase 2: Beispiel-Ablauf "Sitzungs-Anfrage erstellen"
+    Note over User, DB: Phase 2: Example Flow "Create Sitting Request"
     
-    User->>Browser: Klickt auf "Anfrage erstellen"
+    User->>Browser: Clicks on "Create Request"
     Browser->>Browser: api.js: Api.requests.create(data)
     Browser->>Controller: HTTP POST /api/requests (JSON Body)
     
@@ -51,7 +71,7 @@ sequenceDiagram
     Controller->>Service: createRequest(requestObject)
     
     activate Service
-    Service->>Service: Business-Regel: Status auf PENDING setzen
+    Service->>Service: Business Rule: Set status to PENDING
     
     Service->>UoW: save(requestObject)
     activate UoW
@@ -59,12 +79,12 @@ sequenceDiagram
     UoW->>Repo: save(entity)
     Repo->>JPA: persist(entity)
     JPA->>DB: SQL INSERT INTO sitting_request (...)
-    DB-->>JPA: Bestätigung
-    Repo-->>UoW: Gespeicherte Entity
-    UoW-->>Service: Gespeicherte Entity
+    DB-->>JPA: Confirmation
+    Repo-->>UoW: Saved Entity
+    UoW-->>Service: Saved Entity
     deactivate UoW
     
-    Note right of Service: Logik: Zahlungsreservierung
+    Note right of Service: Logic: Payment Reservation
     Service->>PSvc: hold(requestId, userId, amount)
     activate PSvc
     PSvc->>UoW: save(new Payment(status=HELD))
@@ -72,43 +92,76 @@ sequenceDiagram
     PSvc-->>Service: Payment OK
     deactivate PSvc
     
-    Service-->>Controller: SittingRequest (vollständig)
+    Service-->>Controller: SittingRequest (complete)
     deactivate Service
     
     Controller-->>Browser: HTTP 201 Created (JSON)
     deactivate Controller
     
-    Browser-->>User: Erfolgsmeldung anzeigen (UI Update)
+    Browser-->>User: Show success message (UI Update)
 
-    Note over User, DB: Phase 3: Fehlerbehandlung (Exception Handling)
+    Note over User, DB: Phase 3: Exception Handling
     
-    User->>Browser: Versucht ungültige Aktion (z.B. eigene Anfrage annehmen)
+    User->>Browser: Attempts invalid action (e.g., accepting own request)
     Browser->>Controller: HTTP PUT /api/requests/{id}/accept
     Controller->>Service: acceptRequest(id, sitterId)
-    Service->>Service: Validierung: sitterId == requesterId?
+    Service->>Service: Validation: sitterId == requesterId?
     Service-->>Controller: throw RuntimeException("Owner cannot accept own request")
     
-    Note right of Controller: GlobalExceptionHandler fängt Fehler ab
+    Note right of Controller: GlobalExceptionHandler catches error
     Controller->>Controller: GlobalExceptionHandler.handleRuntimeException()
     Controller-->>Browser: HTTP 400 Bad Request ("Owner cannot accept...")
-    Browser-->>User: Fehlermeldung in Toast/Alert anzeigen
-    
+    Browser-->>User: Show error message in Toast/Alert
 ```
 
-## Erläuterung der Komponenten
+## Component Explanation
 
 ### 1. Frontend (Browser)
-Nutzt `fetch` API gekapselt in `api.js`. Die Kommunikation erfolgt rein asynchron über JSON. Jede Seite (`dashboard.html`, `pets.html`, etc.) lädt spezifische JS-Module, die die API aufrufen.
+Uses the `fetch` API encapsulated in `api.js`. Communication is purely asynchronous via JSON. Each page (`dashboard.html`, `pets.html`, etc.) loads specific JS modules that call the API.
 
 ### 2. REST Controller
-Die Einstiegspunkte des Backends. Sie sind "dünn" gehalten und delegieren die gesamte Logik an die Services. Sie nutzen `@CrossOrigin`, um Anfragen vom Frontend-Server zu erlauben.
+The entry points of the backend. They are kept "thin" and delegate all logic to the services. They use `@CrossOrigin` to allow requests from the frontend server.
 
 ### 3. Business Service
-Hier liegt die Kernlogik (Validierungen, Statusübergänge, Verknüpfung verschiedener Domänen wie Sitting und Payment). Sie sind mit `@Transactional` annotiert, um Datenkonsistenz sicherzustellen.
+This is where the core logic resides (validations, state transitions, linking different domains like Sitting and Payment). They are annotated with `@Transactional` to ensure data consistency.
 
 ### 4. Unit of Work & Repositories
-- **Unit of Work**: Dient als zentraler Einstiegspunkt für den Datenzugriff. Es verhindert, dass Services direkt mit dem `EntityManager` hantieren müssen und ermöglicht das dynamische Erstellen von Repositories.
-- **Generic Repository**: Bietet Standard-Methoden wie `save`, `findById`, `findAll` und `delete` für alle Entitäten an, ohne dass für jede Tabelle ein eigenes Interface geschrieben werden muss.
+- **Unit of Work**: Serves as a central entry point for data access. It prevents services from having to deal directly with the `EntityManager` and enables the dynamic creation of repositories.
+- **Generic Repository**: Provides standard methods like `save`, `findById`, `findAll`, and `delete` for all entities without having to write a separate interface for each table.
 
-### 5. Datenbank (H2)
-Eine In-Memory-Datenbank, die bei jedem Neustart frisch aus dem `DataInitializer` befüllt wird. Dies ermöglicht eine schnelle Entwicklung und konsistente Testumgebungen.
+### 5. Database (H2)
+An In-Memory database that is freshly populated from the `DataInitializer` on every restart. This enables fast development and consistent testing environments.
+
+## Security Architecture
+
+The system implements a multi-level security concept:
+
+- **Identity Management**: Authentication via Spring Security. Passwords are stored hashed using **BCrypt**.
+- **Authorization**: Role-Based Access Control (RBAC) model with roles such as `ADMIN`, `USER`, `PET_OWNER`, and `SITTER`.
+- **Validation**: Double validation in both the frontend (UX) and backend (service level) to ensure data integrity.
+- **OWASP Protection**: Protection against SQL Injection through JPA/Hibernate and XSS protection through consistent escaping in the frontend.
+
+## Data Model & Modularization
+
+The backend is divided into clearly separated domain modules:
+
+- **User & Auth**: Management of user accounts, roles, and sessions.
+- **Pet**: Management of pet profiles.
+- **Sitting**: Core logic for sitter requests and their status.
+- **Payment & Wallet**: Processing of payment reservations and virtual credit.
+- **Chat**: Real-time communication between pet owners and sitters.
+- **Rating**: Rating system for completed assignments.
+
+## Deployment & Project Structure
+
+### Deployment
+The application is fully containerized:
+- **`backend/Dockerfile`**: Creates an image for the Spring Boot application.
+- **`frontend/Dockerfile`**: Uses an Nginx server to serve static files.
+- **`docker-compose.yml`**: Orchestrates both services for easy local deployment.
+
+### Project Structure (Excerpt)
+- `backend/src/main/java/...`: Java source code (layered model).
+- `frontend/`: Static web content (HTML, JS, CSS).
+- `docs/`: Architecture and process documentation.
+- `e2e-tests/`: Automated end-to-end tests with Playwright.
